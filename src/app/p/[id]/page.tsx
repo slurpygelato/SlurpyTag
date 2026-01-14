@@ -27,8 +27,13 @@ export default function PublicPetProfile() {
   
   if (!pet) return <div className="min-h-screen flex items-center justify-center font-patrick uppercase text-xl text-black">Profilo non trovato 🦴</div>;
 
+  // Funzione per capitalizzare il nome (Alabama invece di alabama)
+  const capitalizedName = pet.name 
+    ? pet.name.charAt(0).toUpperCase() + pet.name.slice(1).toLowerCase() 
+    : "";
+
   const whatsappLink = pet.owner_phone 
-    ? `https://wa.me/${pet.owner_phone.replace(/\s+/g, '')}?text=Ciao! Ho trovato il tuo cane ${pet.name}!`
+    ? `https://wa.me/${pet.owner_phone.replace(/\s+/g, '')}?text=Ciao! Ho trovato il tuo cane ${capitalizedName}!`
     : "#";
 
   return (
@@ -46,44 +51,10 @@ export default function PublicPetProfile() {
           )}
         </div>
 
-        {/* --- NUOVA SEZIONE INFORMAZIONI DETTAGLIATE --- */}
-        <div className="space-y-4 text-left font-patrick mb-8">
+        <div className="space-y-6 text-left font-patrick">
           
-          {/* Sesso e Microchip */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#F2F2F2] p-3 rounded-2xl border-2 border-black">
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Sesso</p>
-              <p className="text-lg uppercase font-bold">{pet.gender || "N.D."}</p>
-            </div>
-            <div className="bg-[#F2F2F2] p-3 rounded-2xl border-2 border-black">
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Microchip</p>
-              <p className="text-lg uppercase font-bold">{pet.microchip || "N.D."}</p>
-            </div>
-          </div>
-
-          {/* Cosa gli piace */}
-          <div className="bg-yellow-50 p-4 rounded-2xl border-2 border-black">
-            <p className="text-[10px] text-yellow-600 uppercase tracking-widest font-bold">Cosa mi piace ✨</p>
-            <p className="text-md uppercase leading-tight mt-1">{pet.likes || "Nessuna nota specifica"}</p>
-          </div>
-
-          {/* Paure */}
-          <div className="bg-purple-50 p-4 rounded-2xl border-2 border-black">
-            <p className="text-[10px] text-purple-600 uppercase tracking-widest font-bold">Le mie paure ⛈️</p>
-            <p className="text-md uppercase leading-tight mt-1">{pet.fears || "Nessuna paura segnalata"}</p>
-          </div>
-
-          {/* Note Salute (Box Rosso se presenti) */}
-          <div className={`p-4 rounded-2xl border-2 border-black ${pet.health_notes ? 'bg-red-50 border-red-500' : 'bg-gray-50'}`}>
-            <p className={`text-[10px] uppercase tracking-widest font-bold ${pet.health_notes ? 'text-red-600' : 'text-gray-400'}`}>Note sulla Salute 🏥</p>
-            <p className={`text-md uppercase leading-tight mt-1 ${pet.health_notes ? 'text-red-900 font-bold' : ''}`}>
-              {pet.health_notes || "Nessuna condizione medica particolare"}
-            </p>
-          </div>
-
-          {/* --- FINE NUOVA SEZIONE --- */}
-
-          <div className="bg-[#BAE1FF] p-6 rounded-[30px] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mt-4">
+          {/* 1. SEZIONE CONTATTI (ORA PRIMA POSIZIONE) */}
+          <div className="bg-[#BAE1FF] p-6 rounded-[30px] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             <p className="text-center font-bold uppercase mb-4 text-lg">Contatta il mio proprietario</p>
             
             {pet.owner_phone ? (
@@ -105,12 +76,54 @@ export default function PublicPetProfile() {
                 </a>
               </div>
             ) : (
-              <p className="text-center italic text-gray-500">Nessun contatto disponibile</p>
+              <p className="text-center italic text-gray-500 uppercase text-xs">Nessun contatto disponibile</p>
             )}
+          </div>
+
+          <hr className="border-t-2 border-black border-dashed opacity-20 my-2" />
+
+          {/* 2. TITOLO INFORMAZIONI */}
+          <div className="text-center">
+            <h3 className="text-2xl font-bold uppercase italic">Informazioni su di me</h3>
+          </div>
+
+          {/* 3. GRIGLIA INFO UNIFORMATA */}
+          <div className="space-y-3">
+            
+            {/* Sesso e Microchip (Griglia 2 colonne) */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#F2F2F2] p-3 rounded-2xl border-2 border-black">
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest">Sesso</p>
+                <p className="text-lg uppercase font-bold">{pet.gender || "N.D."}</p>
+              </div>
+              <div className="bg-[#F2F2F2] p-3 rounded-2xl border-2 border-black">
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest">Microchip</p>
+                <p className="text-lg uppercase font-bold">{pet.microchip || "N.D."}</p>
+              </div>
+            </div>
+
+            {/* Altre info (Stile uniforme) */}
+            <div className="bg-[#F2F2F2] p-3 rounded-2xl border-2 border-black">
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Cosa mi piace</p>
+              <p className="text-lg uppercase font-bold leading-tight">{pet.likes || "Nessuna nota"}</p>
+            </div>
+
+            <div className="bg-[#F2F2F2] p-3 rounded-2xl border-2 border-black">
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Le mie paure</p>
+              <p className="text-lg uppercase font-bold leading-tight">{pet.fears || "Nessuna nota"}</p>
+            </div>
+
+            <div className="bg-[#F2F2F2] p-3 rounded-2xl border-2 border-black">
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest">Salute / Note Mediche</p>
+              <p className="text-lg uppercase font-bold leading-tight text-red-600">
+                {pet.health_notes || "Nessuna nota"}
+              </p>
+            </div>
+
           </div>
         </div>
 
-        <p className="mt-4 font-patrick text-sm text-gray-400 uppercase">Scansionato tramite Slurpy Tag ✨</p>
+        <p className="mt-8 font-patrick text-sm text-gray-400 uppercase">Scansionato tramite Slurpy Tag ✨</p>
       </div>
     </main>
   );
