@@ -20,43 +20,54 @@ export default function NFCPage() {
   };
 
   const handleConnectNFC = async () => {
-    // 1. Controlla se il browser supporta NFC
+    // 1. Verifica supporto browser
     if (!('NDEFReader' in window)) {
-      setErrorMessage("Il tuo browser o dispositivo non supporta la scrittura NFC. Usa Chrome su Android.");
+      setErrorMessage("Il tuo browser non supporta l'NFC. Usa Chrome su Android.");
       setStatus("error");
       return;
     }
 
     try {
       setStatus("scanning");
-      // @ts-ignore (Web NFC è ancora una feature recente in TS)
+      
+      // @ts-ignore
       const ndef = new NDEFReader();
       await ndef.scan();
       
-      // Definiamo l'URL che vogliamo scrivere (il profilo pubblico del cane)
-      // Usiamo l'URL attuale del sito
+      // L'URL che verrà scritto sulla medaglietta
       const publicUrl = `${window.location.origin}/p/${pet.id}`;
 
+      // Scrittura fisica sul tag
       await ndef.write({
         records: [{ recordType: "url", data: publicUrl }]
       });
 
+      // 2. Aggiornamento Database Supabase con le tue colonne esatte
+      const { error } = await supabase
+        .from('pets')
+        .update({ 
+          is_connected: true,      // Colonna Connection -> True
+          NFC_id: pet.id           // Scrive l'ID del tag
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
       setStatus("success");
-      
-      // Aggiorniamo il database per dire che la medaglietta è collegata
-      await supabase.from('pets').update({ nfc_enabled: true }).eq('id', id);
+      // Ricarichiamo i dati per vedere lo stato aggiornato
+      fetchPet();
 
     } catch (error: any) {
       console.error(error);
-      setErrorMessage("Errore durante la scrittura. Riprova avvicinando meglio la medaglietta.");
+      setErrorMessage("Errore di scrittura. Avvicina meglio il tag al retro del telefono.");
       setStatus("error");
     }
   };
 
-  if (!pet) return <div className="p-10 text-center font-patrick uppercase">Caricamento...</div>;
+  if (!pet) return <div className="p-10 text-center font-patrick uppercase text-black">Caricamento...</div>;
 
   return (
-    <main className="min-h-screen p-4 pb-12 bg-[#FDF6EC] max-w-md mx-auto flex flex-col items-center">
+    <main className="min-h-screen p-4 pb-12 bg-[#FDF6EC] max-w-md mx-auto flex flex-col items-center text-black">
       
       <header className="w-full flex items-center justify-between mb-8 pt-4">
         <button onClick={() => router.push('/dashboard')} className="w-12 h-12 bg-white border-[3px] border-black rounded-2xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
@@ -64,13 +75,13 @@ export default function NFCPage() {
             <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <h1 className="slurpy-logo text-2xl uppercase">NFC Settings</h1>
+        <h1 className="slurpy-logo text-2xl uppercase">Configura Tag</h1>
         <div className="w-12" />
       </header>
 
       <div className="w-full bg-white border-[3px] border-black rounded-[40px] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center space-y-6">
         
-        {/* ICONA ANIMATA IN BASE ALLO STATO */}
+        {/* Feedback Visivo */}
         <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors ${status === 'scanning' ? 'bg-yellow-300 animate-pulse' : status === 'success' ? 'bg-green-400' : 'bg-[#F2F2F2]'}`}>
           <span className="text-5xl">
             {status === 'idle' && "📱"}
@@ -82,23 +93,24 @@ export default function NFCPage() {
 
         <div className="text-center">
           <h2 className="text-3xl font-bold uppercase font-patrick">{pet.name}</h2>
-          <p className="text-gray-400 font-patrick uppercase text-sm tracking-widest">Stato Medaglietta</p>
+          <p className="text-gray-400 font-patrick uppercase text-sm tracking-widest">Stato Collegamento</p>
         </div>
 
-        <div className={`w-full py-4 border-2 border-dashed rounded-[20px] flex items-center justify-center gap-2 ${pet.nfc_enabled || status === 'success' ? 'border-green-300 bg-green-50' : 'border-gray-300'}`}>
-          <span className="font-patrick font-bold uppercase text-black">
-            {status === 'success' || pet.nfc_enabled ? "✨ Collegata!" : "❌ Non Collegata"}
+        {/* Badge Stato (Legge la tua colonna is_connected) */}
+        <div className={`w-full py-4 border-2 border-dashed rounded-[20px] flex items-center justify-center gap-2 ${pet.is_connected ? 'border-green-300 bg-green-50' : 'border-gray-300'}`}>
+          <span className="font-patrick font-bold uppercase">
+            {pet.is_connected ? "✨ Tag Connesso" : "⭕ Non Connesso"}
           </span>
         </div>
 
         <p className="text-center font-patrick text-gray-500 text-sm uppercase px-4 leading-tight">
           {status === 'scanning' 
             ? "Avvicina la medaglietta al retro del telefono..." 
-            : "Clicca il tasto qui sotto per associare la medaglietta a questo cane."}
+            : "Clicca il tasto e tocca la medaglietta per attivarla."}
         </p>
 
         {status === 'error' && (
-            <p className="text-red-500 font-patrick text-xs uppercase font-bold">{errorMessage}</p>
+            <p className="text-red-500 font-patrick text-xs uppercase font-bold text-center">{errorMessage}</p>
         )}
 
         <button 
