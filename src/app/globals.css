@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slurpy-pink: #FF8CB8;
+  --color-slurpy-cream: #FFF9F1;
+  --font-amatic: var(--font-amatic);
+  --font-patrick: var(--font-patrick);
+}
+
+@layer components {
+  body {
+    @apply bg-[#FFF9F1] text-black font-patrick antialiased overflow-x-hidden;
+  }
+
+  /* LOGO: Scalabile */
+  .slurpy-logo {
+    @apply font-amatic text-6xl sm:text-8xl font-[900] italic tracking-tighter mb-2 text-center leading-none;
+  }
+
+  /* TITOLI: Più piccoli su mobile */
+  .slurpy-h2 {
+    @apply font-amatic text-4xl sm:text-5xl font-bold text-center uppercase tracking-wider mb-4 sm:mb-6;
+  }
+
+  /* CARD: Padding e arrotondamento dinamico */
+  .slurpy-card {
+    @apply bg-white p-6 sm:p-10 relative border-2 border-black/5 mx-auto w-full;
+    border-radius: 40px;
+    @apply sm:rounded-[60px];
+    box-shadow: 0 10px 0 0 #000000;
+    @apply sm:shadow-[0_15px_0_0_#000000];
+  }
+
+  /* PULSANTI: Altezza ridotta su mobile (65px vs 85px) */
+  .btn-slurpy-primary, .btn-slurpy-secondary {
+    @apply w-full h-[65px] sm:h-[85px] rounded-full text-2xl sm:text-4xl font-bold uppercase tracking-tight 
+           font-patrick transition-all flex items-center justify-center cursor-pointer;
+  }
+
+  .btn-slurpy-primary {
+    @apply bg-[#FF8CB8] text-black border-2 border-black shadow-[0_5px_0_0_#000000] 
+           sm:shadow-[0_8px_0_0_#000000] active:shadow-none active:translate-y-[5px] sm:active:translate-y-[8px];
+  }
+
+  .btn-slurpy-secondary {
+    @apply bg-white text-gray-400 border-2 border-gray-200 shadow-[0_5px_0_0_#eeeeee] 
+           sm:shadow-[0_8px_0_0_#eeeeee] active:shadow-none active:translate-y-[5px] sm:active:translate-y-[8px];
+  }
+
+  /* INPUT: Altezza adattiva */
+  .slurpy-input {
+    @apply w-full h-[60px] sm:h-[80px] px-6 sm:px-8 bg-gray-50/50 rounded-[22px] sm:rounded-[28px] 
+           text-xl sm:text-2xl font-normal font-patrick border-2 border-transparent 
+           outline-none transition-all placeholder:text-gray-300;
+  }
+
+  .slurpy-input:focus {
+    @apply border-[#FF8CB8] bg-white;
+  }
+
+  /* TOGGLE (Maschio/Femmina/Microchip) */
+  .slurpy-toggle-btn {
+    @apply flex-1 h-16 sm:h-20 rounded-2xl sm:rounded-3xl font-patrick text-2xl sm:text-3xl font-bold uppercase transition-all flex items-center justify-center;
+  }
+
+  .slurpy-toggle-active {
+    @apply bg-[#FF8CB8] border-2 border-black shadow-[0_4px_0_0_#000000] sm:shadow-[0_5px_0_0_#000000];
+  }
+
+  .slurpy-toggle-inactive {
+    @apply bg-gray-100 text-gray-400;
+  }
+}
+
+.PhoneInputInput {
+  @apply outline-none bg-transparent w-full font-patrick text-xl sm:text-2xl uppercase text-center;
+}
+@layer base {
+  body {
+    /* Imposta lo sfondo crema su tutta l'applicazione */
+    @apply bg-[#FDF6EC] text-black antialiased;
+  }
+}
+
+@layer components {
+  /* Stile unico per tutti i campi di input dell'app */
+  .slurpy-input {
+    @apply w-full p-4 rounded-[20px] font-patrick text-xl outline-none transition-all;
+    /* Grigio più scuro per il bordo e il testo */
+    @apply border-[2px] border-[#8e8e8e] text-[#4a4a4a] bg-white;
+    /* Ombra leggera per profondità */
+    @apply shadow-sm;
+  }
+
+  .slurpy-input:focus {
+    /* Il bordo diventa nero quando scrivi */
+    @apply border-black ring-0;
+  }
+
+  /* La card bianca che contiene i moduli */
+  .slurpy-card {
+    @apply bg-white p-8 rounded-[35px] border-[3px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)];
+  }
+}
