@@ -46,16 +46,14 @@ function AuthForm() {
   }, [mode, router]);
 
   const handleGoogleLogin = async () => {
+    // Determina l'URL base corretto (preferisce variabile d'ambiente, altrimenti usa l'origin corrente)
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
+    
     // Se siamo in modalità registrazione, forziamo il redirect a /register
     // Se siamo in modalità login, lasciamo che il callback decida in base ai cani registrati
-    const nextParam = isRegistering ? '?next=/register' : '';
-    
-    // Usa l'URL corrente o una variabile d'ambiente per garantire l'URL corretto
-    const redirectUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/auth/callback${nextParam}`
-      : process.env.NEXT_PUBLIC_SITE_URL 
-        ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback${nextParam}`
-        : `https://slurpy-tag.vercel.app/auth/callback${nextParam}`;
+    const redirectUrl = isRegistering 
+      ? `${baseUrl}/auth/callback?next=/register`
+      : `${baseUrl}/auth/callback`;
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

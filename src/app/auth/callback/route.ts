@@ -50,9 +50,12 @@ export async function GET(request: Request) {
         const { data: { session: verifySession } } = await supabase.auth.getSession()
         
         if (verifySession) {
-          // Se l'utente viene dalla conferma email e deve andare a /register, reindirizzalo lì
+          // Usa sempre l'origin dalla richiesta per garantire l'URL corretto
+          const redirectBase = origin || process.env.NEXT_PUBLIC_SITE_URL || 'https://slurpy-tag.vercel.app'
+          
+          // Se l'utente viene dalla conferma email o dalla registrazione e deve andare a /register, reindirizzalo lì
           if (next === '/register') {
-            return NextResponse.redirect(`${origin}${next}`)
+            return NextResponse.redirect(`${redirectBase}${next}`)
           }
           
           // Controlla se l'utente ha già registrato dei cani
@@ -64,11 +67,11 @@ export async function GET(request: Request) {
           
           // Se non ha cani o c'è un errore, reindirizza a /register
           if (petsError || !petsData || petsData.length === 0) {
-            return NextResponse.redirect(`${origin}/register`)
+            return NextResponse.redirect(`${redirectBase}/register`)
           }
           
           // Se ha cani, vai alla dashboard
-          return NextResponse.redirect(`${origin}/dashboard`)
+          return NextResponse.redirect(`${redirectBase}/dashboard`)
         } else {
           return NextResponse.redirect(`${origin}/login?message=Session not saved`)
         }
