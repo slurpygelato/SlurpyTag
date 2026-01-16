@@ -20,6 +20,7 @@ interface PetData {
   gender: string;
   birthDate: string;
   microchip: string;
+  microchipNumber: string;
   likes: string;
   fears: string;
   healthNotes: string;
@@ -36,7 +37,7 @@ export default function RegisterPage() {
   const [owners, setOwners] = useState<Owner[]>([{ name: "", phone: "", email: "" }]);
   const [petData, setPetData] = useState<PetData>({
     name: "", nickname: "", city: "", province: "", region: "",
-    gender: "", birthDate: "", microchip: "",
+    gender: "", birthDate: "", microchip: "", microchipNumber: "",
     likes: "", fears: "", healthNotes: ""
   });
   const [photos, setPhotos] = useState<{preview: string, file: File}[]>([]);
@@ -128,6 +129,7 @@ export default function RegisterPage() {
           gender: petData.gender.toUpperCase(), 
           birth_date: petData.birthDate,
           microchip: petData.microchip,
+          microchip_number: petData.microchipNumber || null,
           likes: petData.likes,
           fears: petData.fears,
           health_notes: petData.healthNotes,
@@ -251,6 +253,15 @@ export default function RegisterPage() {
                   <button onClick={() => setPetData({...petData, microchip: 'Sì'})} className={`slurpy-toggle-btn ${petData.microchip === 'Sì' ? 'slurpy-toggle-active' : 'slurpy-toggle-inactive'}`}>Sì</button>
                   <button onClick={() => setPetData({...petData, microchip: 'No'})} className={`slurpy-toggle-btn ${petData.microchip === 'No' ? 'slurpy-toggle-active' : 'slurpy-toggle-inactive'}`}>No</button>
                 </div>
+                {petData.microchip === 'Sì' && (
+                  <input 
+                    type="text" 
+                    placeholder="NUMERO MICROCHIP" 
+                    className="slurpy-input text-center uppercase" 
+                    value={petData.microchipNumber} 
+                    onChange={(e) => setPetData({...petData, microchipNumber: e.target.value})} 
+                  />
+                )}
               </div>
               <div className="pt-4 space-y-3">
                 <button onClick={() => setStep(4)} className="btn-slurpy-primary uppercase">Avanti</button>
@@ -262,9 +273,18 @@ export default function RegisterPage() {
           {step === 4 && (
             <div className="animate-in slide-in-from-right duration-500 space-y-4">
               <h2 className="slurpy-h2 italic uppercase text-center">Curiosità</h2>
-              <textarea placeholder="COSA GLI PIACE?" className="slurpy-input h-24 py-4 resize-none text-center uppercase" value={petData.likes} onChange={(e) => setPetData({...petData, likes: e.target.value})} />
-              <textarea placeholder="LE SUE PAURE?" className="slurpy-input h-24 py-4 resize-none text-center uppercase" value={petData.fears} onChange={(e) => setPetData({...petData, fears: e.target.value})} />
-              <textarea placeholder="NOTE SALUTE" className="slurpy-input h-24 py-4 resize-none border-red-100 bg-red-50/20 text-center uppercase" value={petData.healthNotes} onChange={(e) => setPetData({...petData, healthNotes: e.target.value})} />
+              <div className="space-y-2">
+                <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">cosa gli piace</span>
+                <textarea placeholder="COSA GLI PIACE?" className="slurpy-input h-24 py-4 resize-none text-center uppercase" value={petData.likes} onChange={(e) => setPetData({...petData, likes: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">di cosa ha paura</span>
+                <textarea placeholder="LE SUE PAURE?" className="slurpy-input h-24 py-4 resize-none text-center uppercase" value={petData.fears} onChange={(e) => setPetData({...petData, fears: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">note sulla salute</span>
+                <textarea placeholder="NOTE SALUTE" className="slurpy-input h-24 py-4 resize-none border-red-100 bg-red-50/20 text-center uppercase" value={petData.healthNotes} onChange={(e) => setPetData({...petData, healthNotes: e.target.value})} />
+              </div>
               <div className="pt-4 space-y-3">
                 <button onClick={() => setStep(5)} className="btn-slurpy-primary uppercase">Avanti</button>
                 <button onClick={() => setStep(3)} className="btn-slurpy-secondary uppercase">Indietro</button>
@@ -312,9 +332,9 @@ export default function RegisterPage() {
                   <p>📞 {owners[0].phone}</p>
                 </div>
                 <div className="text-left font-patrick uppercase text-xs space-y-1 border-t-2 border-dashed border-black/10 pt-4">
-                  <p><span className="text-[#FF8CB8] font-bold">Loves:</span> {petData.likes || "---"}</p>
-                  <p><span className="text-blue-400 font-bold">Fears:</span> {petData.fears || "---"}</p>
-                  <p><span className="text-red-400 font-bold">Health:</span> {petData.healthNotes || "---"}</p>
+                  <p><span className="text-[#FF8CB8] font-bold">cosa gli piace:</span> {petData.likes || "---"}</p>
+                  <p><span className="text-blue-400 font-bold">cosa paura:</span> {petData.fears || "---"}</p>
+                  <p><span className="text-red-400 font-bold">salute:</span> {petData.healthNotes || "---"}</p>
                 </div>
               </div>
               <div className="pt-4 space-y-3">
