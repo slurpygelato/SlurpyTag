@@ -8,13 +8,19 @@ export async function GET(request: Request) {
   const error_description = searchParams.get('error_description')
   const error_code = searchParams.get('error')
   
+  // Assicurati che l'origin non sia localhost in produzione
+  // Se l'origin è localhost ma siamo su Vercel, usa l'URL di produzione
+  const safeOrigin = origin.includes('localhost') 
+    ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://slurpy-tag.vercel.app')
+    : origin
+  
   // "next" è dove vogliamo mandare l'utente (default: dashboard)
   const next = searchParams.get('next') ?? '/dashboard'
 
   // Se c'è un errore nella query string, reindirizza al login
   if (error_description || error_code) {
     const errorMsg = error_description || error_code || 'Authentication error'
-    return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(errorMsg)}`)
+    return NextResponse.redirect(`${safeOrigin}/login?message=${encodeURIComponent(errorMsg)}`)
   }
 
   if (code) {
@@ -42,7 +48,7 @@ export async function GET(request: Request) {
       
       if (error) {
         console.error('Auth callback error:', error)
-        return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(error.message)}`)
+        return NextResponse.redirect(`${safeOrigin}/login?message=${encodeURIComponent(error.message)}`)
       }
       
       if (data?.session) {
@@ -50,8 +56,8 @@ export async function GET(request: Request) {
         const { data: { session: verifySession } } = await supabase.auth.getSession()
         
         if (verifySession) {
-          // Usa sempre l'origin dalla richiesta per garantire l'URL corretto
-          const redirectBase = origin || process.env.NEXT_PUBLIC_SITE_URL || 'https://slurpy-tag.vercel.app'
+          // Usa sempre l'origin sicuro (non localhost in produzione)
+          const redirectBase = safeOrigin
           
           // Se l'utente viene dalla conferma email o dalla registrazione e deve andare a /register, reindirizzalo lì
           if (next === '/register') {
@@ -73,17 +79,17 @@ export async function GET(request: Request) {
           // Se ha cani, vai alla dashboard
           return NextResponse.redirect(`${redirectBase}/dashboard`)
         } else {
-          return NextResponse.redirect(`${origin}/login?message=Session not saved`)
+          return NextResponse.redirect(`${safeOrigin}/login?message=Session not saved`)
         }
       }
       
-      return NextResponse.redirect(`${origin}/login?message=No session created`)
+      return NextResponse.redirect(`${safeOrigin}/login?message=No session created`)
     } catch (err: any) {
       console.error('Callback route error:', err)
-      return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(err.message || 'Authentication failed')}`)
+      return NextResponse.redirect(`${safeOrigin}/login?message=${encodeURIComponent(err.message || 'Authentication failed')}`)
     }
   }
 
   // Se non c'è codice, torna alla pagina di login
-  return NextResponse.redirect(`${origin}/login?message=No authentication code provided`)
+  return NextResponse.redirect(`${safeOrigin}/login?message=No authentication code provided`)
 }

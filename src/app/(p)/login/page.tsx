@@ -46,8 +46,11 @@ function AuthForm() {
   }, [mode, router]);
 
   const handleGoogleLogin = async () => {
-    // Determina l'URL base corretto (preferisce variabile d'ambiente, altrimenti usa l'origin corrente)
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
+    // Usa sempre l'URL corrente del browser per garantire che sia corretto
+    // window.location.origin su Vercel sarà sempre l'URL corretto (es: https://slurpy-tag.vercel.app)
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://slurpy-tag.vercel.app';
     
     // Se siamo in modalità registrazione, forziamo il redirect a /register
     // Se siamo in modalità login, lasciamo che il callback decida in base ai cani registrati
