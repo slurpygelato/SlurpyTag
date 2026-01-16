@@ -129,7 +129,7 @@ export default function RegisterPage() {
           gender: petData.gender.toUpperCase(), 
           birth_date: petData.birthDate,
           microchip: petData.microchip,
-          microchip_number: petData.microchipNumber || null,
+          microchip_id: petData.microchipNumber || null,
           likes: petData.likes,
           fears: petData.fears,
           health_notes: petData.healthNotes,
