@@ -8,6 +8,13 @@ export async function GET(request: Request) {
   const error_description = searchParams.get('error_description')
   const error_code = searchParams.get('error')
   
+  // Debug: log tutti i parametri ricevuti
+  console.log('[Callback] Full URL:', request.url);
+  console.log('[Callback] Code:', code ? 'present' : 'missing');
+  console.log('[Callback] Error:', error_code || error_description || 'none');
+  console.log('[Callback] Origin:', origin);
+  console.log('[Callback] All params:', Object.fromEntries(searchParams.entries()));
+  
   // Determina l'URL base sicuro (non localhost in produzione)
   const safeOrigin = origin.includes('localhost') 
     ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://slurpy-tag.vercel.app')
@@ -16,6 +23,7 @@ export async function GET(request: Request) {
   // Se c'è un errore nella query string, reindirizza al login
   if (error_description || error_code) {
     const errorMsg = error_description || error_code || 'Authentication error'
+    console.error('[Callback] Auth error:', errorMsg);
     return NextResponse.redirect(`${safeOrigin}/login?message=${encodeURIComponent(errorMsg)}`)
   }
 

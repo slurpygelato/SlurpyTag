@@ -33,16 +33,20 @@ function AuthForm() {
       localStorage.setItem('auth_intent', isRegistering ? 'register' : 'login');
     }
     
-    // Usa l'URL corrente del browser
-    const baseUrl = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : 'https://slurpy-tag.vercel.app';
+    // Usa sempre la variabile d'ambiente se disponibile (più affidabile su Vercel)
+    // Altrimenti usa l'URL corrente del browser
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
+      || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
     
-    // Assicuriamoci che l'URL sia pulito e corrisponda a quello in Supabase
+    // Assicuriamoci che l'URL sia pulito e corrisponda esattamente a quello in Supabase
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
     const redirectUrl = `${cleanBaseUrl}/auth/callback`;
     
-    const { error } = await supabase.auth.signInWithOAuth({
+    // Debug: log per verificare l'URL (rimuovere in produzione)
+    console.log('[Google OAuth] Redirect URL:', redirectUrl);
+    console.log('[Google OAuth] Intent:', isRegistering ? 'register' : 'login');
+    
+    const { error, data } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
@@ -52,7 +56,14 @@ function AuthForm() {
         },
       },
     });
-    if (error) setMessage(error.message);
+    
+    if (error) {
+      console.error('[Google OAuth] Error:', error);
+      setMessage(error.message);
+    } else if (data?.url) {
+      // Se Supabase restituisce un URL, significa che sta per reindirizzare
+      console.log('[Google OAuth] Redirecting to:', data.url);
+    }
   };
 
   const handleAuth = async (e: React.FormEvent) => {
