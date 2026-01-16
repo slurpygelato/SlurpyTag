@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect, Suspense } from "react"; // Aggiunto Suspense
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-// 1. Creiamo un componente interno per la logica dei parametri
+// Componente interno per la logica dei parametri
 function AuthForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -19,25 +19,26 @@ function AuthForm() {
   const [message, setMessage] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Aggiorna isRegistering quando cambia il mode
   useEffect(() => {
     setIsRegistering(mode === "signup");
     setMessage("");
     setIsSubmitted(false);
-    // Rimossa la logica di redirect automatico - l'utente deve poter vedere e usare il form di login/registrazione
   }, [mode]);
 
   const handleGoogleLogin = async () => {
-    // Usa sempre l'URL corrente del browser per garantire che sia corretto
-    // window.location.origin su Vercel sarà sempre l'URL corretto (es: https://slurpy-tag.vercel.app)
+    // Salva l'intento dell'utente in localStorage PRIMA del redirect a Google
+    // Questo viene usato nel callback per sapere dove reindirizzare
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_intent', isRegistering ? 'register' : 'login');
+    }
+    
+    // Usa l'URL corrente del browser
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
       : 'https://slurpy-tag.vercel.app';
     
-    // Se siamo in modalità registrazione, forziamo il redirect a /register
-    // Se siamo in modalità login, lasciamo che il callback decida in base ai cani registrati
-    const redirectUrl = isRegistering 
-      ? `${baseUrl}/auth/callback?next=/register`
-      : `${baseUrl}/auth/callback`;
+    const redirectUrl = `${baseUrl}/auth/callback`;
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -63,22 +64,21 @@ function AuthForm() {
         setLoading(false);
         return;
       }
-      // Usa l'URL corrente o una variabile d'ambiente per garantire l'URL corretto
+      
       const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/auth/callback?next=/register`
-        : process.env.NEXT_PUBLIC_SITE_URL 
-          ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/register`
-          : 'https://slurpy-tag.vercel.app/auth/callback?next=/register';
+        ? `${window.location.origin}/auth/callback`
+        : 'https://slurpy-tag.vercel.app/auth/callback';
+      
+      // Salva l'intento per la conferma email
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('auth_intent', 'register');
+      }
       
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: { 
           emailRedirectTo: redirectUrl,
-          // Abilita la conferma email
-          data: {
-            email_redirect: redirectUrl
-          }
         }
       });
       if (error) setMessage(error.message);
@@ -208,7 +208,7 @@ function AuthForm() {
   );
 }
 
-// 2. Esportiamo la pagina avvolgendola in Suspense
+// Esportiamo la pagina avvolgendola in Suspense
 export default function AuthPage() {
   return (
     <main className="min-h-screen p-6 flex items-center justify-center bg-[#FDF6EC]">
