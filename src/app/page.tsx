@@ -12,7 +12,18 @@ export default function HomePage() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push("/dashboard");
+        // Controlla se l'utente ha già registrato dei cani
+        const { data: petsData } = await supabase
+          .from('pets')
+          .select('id')
+          .eq('owner_id', session.user.id)
+          .limit(1);
+        
+        if (petsData && petsData.length > 0) {
+          router.push("/dashboard");
+        } else {
+          router.push("/register");
+        }
       }
     };
     checkSession();

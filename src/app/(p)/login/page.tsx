@@ -28,19 +28,34 @@ function AuthForm() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        router.push("/dashboard");
+        // Controlla se l'utente ha già registrato dei cani
+        const { data: petsData } = await supabase
+          .from('pets')
+          .select('id')
+          .eq('owner_id', session.user.id)
+          .limit(1);
+        
+        if (petsData && petsData.length > 0) {
+          router.push("/dashboard");
+        } else {
+          router.push("/register");
+        }
       }
     };
     checkSession();
   }, [mode, router]);
 
   const handleGoogleLogin = async () => {
+    // Se siamo in modalità registrazione, forziamo il redirect a /register
+    // Se siamo in modalità login, lasciamo che il callback decida in base ai cani registrati
+    const nextParam = isRegistering ? '?next=/register' : '';
+    
     // Usa l'URL corrente o una variabile d'ambiente per garantire l'URL corretto
     const redirectUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/auth/callback`
+      ? `${window.location.origin}/auth/callback${nextParam}`
       : process.env.NEXT_PUBLIC_SITE_URL 
-        ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
-        : 'https://slurpy-tag.vercel.app/auth/callback';
+        ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback${nextParam}`
+        : `https://slurpy-tag.vercel.app/auth/callback${nextParam}`;
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -87,9 +102,23 @@ function AuthForm() {
       if (error) setMessage(error.message);
       else setIsSubmitted(true);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(error.message);
-      else router.push("/dashboard");
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setMessage(error.message);
+      } else if (data.session) {
+        // Controlla se l'utente ha già registrato dei cani
+        const { data: petsData } = await supabase
+          .from('pets')
+          .select('id')
+          .eq('owner_id', data.session.user.id)
+          .limit(1);
+        
+        if (petsData && petsData.length > 0) {
+          router.push("/dashboard");
+        } else {
+          router.push("/register");
+        }
+      }
     }
     setLoading(false);
   };
@@ -164,7 +193,7 @@ function AuthForm() {
               className="w-full flex items-center justify-center gap-3 border-2 border-gray-100 p-3 rounded-2xl hover:bg-gray-50 transition-all font-patrick uppercase text-lg shadow-sm"
             >
               <img src="https://authjs.dev/img/providers/google.svg" className="w-5 h-5" alt="Google" />
-              Accedi con Google
+              {isRegistering ? "Registrati con Google" : "Accedi con Google"}
             </button>
           </div>
 

@@ -54,8 +54,21 @@ export async function GET(request: Request) {
           if (next === '/register') {
             return NextResponse.redirect(`${origin}${next}`)
           }
-          // Redirect alla dashboard o alla pagina richiesta
-          return NextResponse.redirect(`${origin}${next}`)
+          
+          // Controlla se l'utente ha già registrato dei cani
+          const { data: petsData, error: petsError } = await supabase
+            .from('pets')
+            .select('id')
+            .eq('owner_id', verifySession.user.id)
+            .limit(1)
+          
+          // Se non ha cani o c'è un errore, reindirizza a /register
+          if (petsError || !petsData || petsData.length === 0) {
+            return NextResponse.redirect(`${origin}/register`)
+          }
+          
+          // Se ha cani, vai alla dashboard
+          return NextResponse.redirect(`${origin}/dashboard`)
         } else {
           return NextResponse.redirect(`${origin}/login?message=Session not saved`)
         }
