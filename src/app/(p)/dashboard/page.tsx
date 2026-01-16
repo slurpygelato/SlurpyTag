@@ -115,7 +115,17 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <button onClick={() => supabase.auth.signOut().then(() => router.push("/"))} className="mt-auto mb-4 font-patrick text-[#8e8e8e] underline uppercase text-sm text-center">Esci dal profilo</button>
+      <div className="mt-auto mb-6 pt-6 border-t-2 border-dashed border-black/10">
+        <button 
+          onClick={async () => {
+            await supabase.auth.signOut();
+            router.push("/");
+          }} 
+          className="btn-slurpy-secondary w-full py-4 uppercase font-patrick text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:brightness-95 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
+        >
+          Log out
+        </button>
+      </div>
     </main>
   );
 }
