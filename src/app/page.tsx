@@ -1,6 +1,23 @@
+"use client";
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Verifica se l'utente è già autenticato
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/dashboard");
+      }
+    };
+    checkSession();
+  }, [router]);
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-white">
       <h1 className="slurpy-logo text-6xl mb-12">Slurpy Tag</h1>

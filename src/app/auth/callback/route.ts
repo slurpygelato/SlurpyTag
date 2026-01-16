@@ -6,48 +6,66 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const error_description = searchParams.get('error_description')
+  const error_code = searchParams.get('error')
   
   // "next" è dove vogliamo mandare l'utente (default: dashboard)
   const next = searchParams.get('next') ?? '/dashboard'
 
   // Se c'è un errore nella query string, reindirizza al login
-  if (error_description) {
-    return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(error_description)}`)
+  if (error_description || error_code) {
+    const errorMsg = error_description || error_code || 'Authentication error'
+    return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(errorMsg)}`)
   }
 
   if (code) {
-    const cookieStore = await cookies() // Aggiunto await per Next.js 15
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
+    try {
+      const cookieStore = await cookies()
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              cookieStore.set({ name, value, ...options })
+            },
+            remove(name: string, options: CookieOptions) {
+              cookieStore.set({ name, value: '', ...options })
+            },
           },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: '', ...options })
-          },
-        },
-      }
-    )
+        }
+      )
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!error && data.session) {
-      // Se l'utente viene dalla conferma email e deve andare a /register, reindirizzalo lì
-      if (next === '/register') {
-        return NextResponse.redirect(`${origin}${next}`)
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (error) {
+        console.error('Auth callback error:', error)
+        return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(error.message)}`)
       }
-      return NextResponse.redirect(`${origin}${next}`)
+      
+      if (data?.session) {
+        // Verifica che la sessione sia stata salvata correttamente
+        const { data: { session: verifySession } } = await supabase.auth.getSession()
+        
+        if (verifySession) {
+          // Se l'utente viene dalla conferma email e deve andare a /register, reindirizzalo lì
+          if (next === '/register') {
+            return NextResponse.redirect(`${origin}${next}`)
+          }
+          // Redirect alla dashboard o alla pagina richiesta
+          return NextResponse.redirect(`${origin}${next}`)
+        } else {
+          return NextResponse.redirect(`${origin}/login?message=Session not saved`)
+        }
+      }
+      
+      return NextResponse.redirect(`${origin}/login?message=No session created`)
+    } catch (err: any) {
+      console.error('Callback route error:', err)
+      return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(err.message || 'Authentication failed')}`)
     }
-    
-    // Se c'è un errore, torna alla pagina di login con un messaggio
-    const errorMessage = error?.message || 'Could not authenticate user'
-    return NextResponse.redirect(`${origin}/login?message=${encodeURIComponent(errorMessage)}`)
   }
 
   // Se non c'è codice, torna alla pagina di login

@@ -23,7 +23,16 @@ function AuthForm() {
     setIsRegistering(mode === "signup");
     setMessage("");
     setIsSubmitted(false);
-  }, [mode]);
+    
+    // Verifica se l'utente è già autenticato
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.push("/dashboard");
+      }
+    };
+    checkSession();
+  }, [mode, router]);
 
   const handleGoogleLogin = async () => {
     // Usa l'URL corrente o una variabile d'ambiente per garantire l'URL corretto
