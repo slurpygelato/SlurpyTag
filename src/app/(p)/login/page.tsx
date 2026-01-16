@@ -26,10 +26,21 @@ function AuthForm() {
   }, [mode]);
 
   const handleGoogleLogin = async () => {
+    // Usa l'URL corrente o una variabile d'ambiente per garantire l'URL corretto
+    const redirectUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/auth/callback`
+      : process.env.NEXT_PUBLIC_SITE_URL 
+        ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+        : 'https://slurpy-tag.vercel.app/auth/callback';
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
     if (error) setMessage(error.message);
@@ -46,10 +57,23 @@ function AuthForm() {
         setLoading(false);
         return;
       }
+      // Usa l'URL corrente o una variabile d'ambiente per garantire l'URL corretto
+      const redirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/auth/callback?next=/register`
+        : process.env.NEXT_PUBLIC_SITE_URL 
+          ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/register`
+          : 'https://slurpy-tag.vercel.app/auth/callback?next=/register';
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/register` }
+        options: { 
+          emailRedirectTo: redirectUrl,
+          // Abilita la conferma email
+          data: {
+            email_redirect: redirectUrl
+          }
+        }
       });
       if (error) setMessage(error.message);
       else setIsSubmitted(true);
