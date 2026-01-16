@@ -15,7 +15,11 @@ export async function GET(request: Request) {
     : origin
   
   // "next" è dove vogliamo mandare l'utente (default: dashboard)
+  // Leggi il parametro next dalla query string
   const next = searchParams.get('next') ?? '/dashboard'
+  
+  // Debug temporaneo - rimuovere dopo il test
+  console.log('[Callback] next param:', next, 'full URL:', request.url)
 
   // Se c'è un errore nella query string, reindirizza al login
   if (error_description || error_code) {
@@ -59,30 +63,40 @@ export async function GET(request: Request) {
           // Usa sempre l'origin sicuro (non localhost in produzione)
           const redirectBase = safeOrigin
           
-          // Se l'utente viene dalla conferma email o dalla registrazione e deve andare a /register, reindirizzalo lì
+          // PRIORITÀ 1: Se l'utente viene da "Registrati con Google" (next=/register), reindirizzalo SEMPRE a /register
+          // Questo deve essere controllato PRIMA di qualsiasi altro controllo
           if (next === '/register') {
-            return NextResponse.redirect(`${redirectBase}${next}`)
+            return NextResponse.redirect(`${redirectBase}/register`)
           }
           
-          // Controlla se l'utente ha già registrato dei cani
+          // PRIORITÀ 2: Controlla se l'utente ha già registrato dei cani (solo se non viene da registrazione)
           const { data: petsData, error: petsError } = await supabase
             .from('pets')
             .select('id')
             .eq('owner_id', verifySession.user.id)
             .limit(1)
           
-          // Se non ha cani o c'è un errore, reindirizza a /register
+          // Se non ha cani o c'è un errore, reindirizza a /register (nuovo utente)
           if (petsError || !petsData || petsData.length === 0) {
             return NextResponse.redirect(`${redirectBase}/register`)
           }
           
-          // Se ha cani, vai alla dashboard
+          // PRIORITÀ 3: Se ha cani, vai alla dashboard (utente esistente)
           return NextResponse.redirect(`${redirectBase}/dashboard`)
         } else {
+          // Se la sessione non è stata salvata ma l'utente viene da registrazione, prova comunque a reindirizzare a /register
+          if (next === '/register') {
+            return NextResponse.redirect(`${safeOrigin}/register`)
+          }
+          // Altrimenti reindirizza al login
           return NextResponse.redirect(`${safeOrigin}/login?message=Session not saved`)
         }
       }
       
+      // Se non c'è sessione ma l'utente viene da registrazione, prova comunque a reindirizzare a /register
+      if (next === '/register') {
+        return NextResponse.redirect(`${safeOrigin}/register`)
+      }
       return NextResponse.redirect(`${safeOrigin}/login?message=No session created`)
     } catch (err: any) {
       console.error('Callback route error:', err)
