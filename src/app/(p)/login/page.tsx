@@ -23,27 +23,8 @@ function AuthForm() {
     setIsRegistering(mode === "signup");
     setMessage("");
     setIsSubmitted(false);
-    
-    // Verifica se l'utente è già autenticato
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Controlla se l'utente ha già registrato dei cani
-        const { data: petsData } = await supabase
-          .from('pets')
-          .select('id')
-          .eq('owner_id', session.user.id)
-          .limit(1);
-        
-        if (petsData && petsData.length > 0) {
-          router.push("/dashboard");
-        } else {
-          router.push("/register");
-        }
-      }
-    };
-    checkSession();
-  }, [mode, router]);
+    // Rimossa la logica di redirect automatico - l'utente deve poter vedere e usare il form di login/registrazione
+  }, [mode]);
 
   const handleGoogleLogin = async () => {
     // Usa sempre l'URL corrente del browser per garantire che sia corretto
