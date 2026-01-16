@@ -38,7 +38,9 @@ function AuthForm() {
       ? window.location.origin 
       : 'https://slurpy-tag.vercel.app';
     
-    const redirectUrl = `${baseUrl}/auth/callback`;
+    // Assicuriamoci che l'URL sia pulito e corrisponda a quello in Supabase
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const redirectUrl = `${cleanBaseUrl}/auth/callback`;
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
