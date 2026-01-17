@@ -19,6 +19,52 @@ function AuthForm() {
   const [message, setMessage] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Controlla se siamo tornati da un redirect OAuth
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      // Controlla se c'è un hash con il codice (OAuth callback)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const error = hashParams.get('error');
+      
+      if (error) {
+        setMessage(`Errore autenticazione: ${error}`);
+        return;
+      }
+      
+      if (accessToken) {
+        // Siamo tornati da OAuth, verifica la sessione
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Leggi l'intento salvato
+          const authIntent = localStorage.getItem('auth_intent');
+          localStorage.removeItem('auth_intent');
+          
+          if (authIntent === 'register') {
+            router.push("/register");
+            return;
+          }
+          
+          // Controlla se ha cani
+          const { data: petsData } = await supabase
+            .from('pets')
+            .select('id')
+            .eq('owner_id', session.user.id)
+            .limit(1);
+          
+          if (petsData && petsData.length > 0) {
+            router.push("/dashboard");
+          } else {
+            router.push("/register");
+          }
+        }
+      }
+    };
+    
+    handleAuthCallback();
+  }, [router]);
+
   // Aggiorna isRegistering quando cambia il mode
   useEffect(() => {
     setIsRegistering(mode === "signup");
@@ -28,25 +74,21 @@ function AuthForm() {
 
   const handleGoogleLogin = async () => {
     // Salva l'intento dell'utente in localStorage PRIMA del redirect a Google
-    // Questo viene usato nel callback per sapere dove reindirizzare
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth_intent', isRegistering ? 'register' : 'login');
     }
     
-    // Usa sempre la variabile d'ambiente se disponibile (più affidabile su Vercel)
-    // Altrimenti usa l'URL corrente del browser
+    // Usa sempre la variabile d'ambiente se disponibile
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
       || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
     
-    // Assicuriamoci che l'URL sia pulito e corrisponda esattamente a quello in Supabase
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    const redirectUrl = `${cleanBaseUrl}/auth/callback`;
+    const redirectUrl = `${cleanBaseUrl}/login`;
     
-    // Debug: log per verificare l'URL (rimuovere in produzione)
     console.log('[Google OAuth] Redirect URL:', redirectUrl);
     console.log('[Google OAuth] Intent:', isRegistering ? 'register' : 'login');
     
-    const { error, data } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
@@ -60,9 +102,6 @@ function AuthForm() {
     if (error) {
       console.error('[Google OAuth] Error:', error);
       setMessage(error.message);
-    } else if (data?.url) {
-      // Se Supabase restituisce un URL, significa che sta per reindirizzare
-      console.log('[Google OAuth] Redirecting to:', data.url);
     }
   };
 
@@ -79,8 +118,8 @@ function AuthForm() {
       }
       
       const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/auth/callback`
-        : 'https://slurpy-tag.vercel.app/auth/callback';
+        ? `${window.location.origin}/login`
+        : 'https://slurpy-tag.vercel.app/login';
       
       // Salva l'intento per la conferma email
       if (typeof window !== 'undefined') {
