@@ -81,6 +81,20 @@ export default function RegisterPage() {
     setPhotos(newPhotos);
   };
 
+  const validateStep1 = () => {
+    for (const owner of owners) {
+      if (!owner.name.trim()) {
+        alert("Inserisci il NOME del proprietario!");
+        return false;
+      }
+      if (!owner.phone.trim()) {
+        alert("Inserisci il CELLULARE del proprietario!");
+        return false;
+      }
+    }
+    return true;
+  };
+
   const validateStep2 = () => {
     if (!petData.name.trim()) {
       alert("Inserisci il NOME del cane!");
@@ -242,16 +256,16 @@ export default function RegisterPage() {
               <h2 className="slurpy-h2 italic uppercase text-center">Contatti proprietario</h2>
               {owners.map((owner, i) => (
                 <div key={i} className="space-y-3 p-5 bg-white/40 rounded-[30px] border-2 border-black/5">
-                  <input type="text" placeholder="IL TUO NOME" className="slurpy-input text-center uppercase" value={owner.name} onChange={(e) => updateOwner(i, 'name', e.target.value)} />
+                  <input type="text" placeholder="IL TUO NOME *" className="slurpy-input text-center uppercase" value={owner.name} onChange={(e) => updateOwner(i, 'name', e.target.value)} />
                   <div className="slurpy-input bg-white flex items-center justify-center">
-                    <PhoneInput defaultCountry="IT" placeholder="CELLULARE" value={owner.phone} onChange={(v) => updateOwner(i, 'phone', v || "")} className="w-full flex" />
+                    <PhoneInput defaultCountry="IT" placeholder="CELLULARE *" value={owner.phone} onChange={(v) => updateOwner(i, 'phone', v || "")} className="w-full flex" />
                   </div>
                   <input type="email" placeholder="EMAIL" className="slurpy-input text-center !normal-case" value={owner.email} onChange={(e) => updateOwner(i, 'email', e.target.value)} />
                 </div>
               ))}
               <button onClick={() => setOwners([...owners, {name:"", phone:"", email:""}])} className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 font-bold uppercase text-[10px] font-patrick">+ Aggiungi proprietario</button>
               <div className="pt-4 space-y-3">
-                <button onClick={() => setStep(2)} className="btn-slurpy-primary uppercase">Continua</button>
+                <button onClick={() => { if (validateStep1()) setStep(2); }} className="btn-slurpy-primary uppercase">Continua</button>
                 <button onClick={() => setStep(0)} className="btn-slurpy-secondary uppercase">Indietro</button>
               </div>
             </div>
@@ -261,12 +275,12 @@ export default function RegisterPage() {
             <div className="animate-in slide-in-from-right duration-500 space-y-4">
               <h2 className="slurpy-h2 italic uppercase text-center">Dati del cane</h2>
               <p className="text-center text-gray-500 font-patrick text-sm italic">(Potrai aggiungere un secondo pelosetto dopo aver registrato il primo)</p>
-              <input type="text" placeholder="NOME" className="slurpy-input text-center uppercase" value={petData.name} onChange={(e) => setPetData({...petData, name: e.target.value})} />
+              <input type="text" placeholder="NOME *" className="slurpy-input text-center uppercase" value={petData.name} onChange={(e) => setPetData({...petData, name: e.target.value})} />
               <input type="text" placeholder="SOPRANNOME" className="slurpy-input text-center uppercase" value={petData.nickname} onChange={(e) => setPetData({...petData, nickname: e.target.value})} />
-              <input type="text" placeholder="CITTÀ" className="slurpy-input text-center uppercase" value={petData.city} onChange={(e) => setPetData({...petData, city: e.target.value})} />
+              <input type="text" placeholder="CITTÀ *" className="slurpy-input text-center uppercase" value={petData.city} onChange={(e) => setPetData({...petData, city: e.target.value})} />
               <div className="grid grid-cols-2 gap-3">
-                <input type="text" placeholder="PROV." maxLength={2} className="slurpy-input text-center uppercase" value={petData.province} onChange={(e) => setPetData({...petData, province: e.target.value})} />
-                <input type="text" placeholder="REGIONE" className="slurpy-input text-center uppercase" value={petData.region} onChange={(e) => setPetData({...petData, region: e.target.value})} />
+                <input type="text" placeholder="PROV. *" maxLength={2} className="slurpy-input text-center uppercase" value={petData.province} onChange={(e) => setPetData({...petData, province: e.target.value})} />
+                <input type="text" placeholder="REGIONE *" className="slurpy-input text-center uppercase" value={petData.region} onChange={(e) => setPetData({...petData, region: e.target.value})} />
               </div>
               <div className="pt-4 space-y-3">
                 <button onClick={() => { if (validateStep2()) setStep(3); }} className="btn-slurpy-primary uppercase">Avanti</button>
@@ -279,7 +293,7 @@ export default function RegisterPage() {
             <div className="animate-in slide-in-from-right duration-500 space-y-6">
               <h2 className="slurpy-h2 italic uppercase text-center">Identità</h2>
               <div className="space-y-2">
-                <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">Sesso</span>
+                <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">Sesso *</span>
                 <div className="flex gap-3">
                   <button onClick={() => setPetData({...petData, gender: 'Maschio'})} className={`slurpy-toggle-btn ${petData.gender === 'Maschio' ? 'slurpy-toggle-active' : 'slurpy-toggle-inactive'}`}>Maschio</button>
                   <button onClick={() => setPetData({...petData, gender: 'Femmina'})} className={`slurpy-toggle-btn ${petData.gender === 'Femmina' ? 'slurpy-toggle-active' : 'slurpy-toggle-inactive'}`}>Femmina</button>
@@ -293,7 +307,7 @@ export default function RegisterPage() {
                 <input type="date" ref={dateInputRef} className="sr-only" onChange={(e) => setPetData({...petData, birthDate: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">Microchip</span>
+                <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">Microchip *</span>
                 <div className="flex gap-3">
                   <button onClick={() => setPetData({...petData, microchip: 'Sì'})} className={`slurpy-toggle-btn ${petData.microchip === 'Sì' ? 'slurpy-toggle-active' : 'slurpy-toggle-inactive'}`}>Sì</button>
                   <button onClick={() => setPetData({...petData, microchip: 'No'})} className={`slurpy-toggle-btn ${petData.microchip === 'No' ? 'slurpy-toggle-active' : 'slurpy-toggle-inactive'}`}>No</button>
@@ -339,7 +353,8 @@ export default function RegisterPage() {
 
           {step === 5 && (
             <div className="animate-in zoom-in duration-500 space-y-6 text-center">
-              <h2 className="slurpy-h2 italic uppercase">Foto 📸</h2>
+              <h2 className="slurpy-h2 italic uppercase">Foto 📸 <span className="text-red-500">*</span></h2>
+              <p className="text-sm text-gray-500 font-patrick italic">Carica almeno una foto</p>
               <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handlePhotoChange} />
               <div className="grid grid-cols-3 gap-2">
                 {[0, 1, 2].map(i => (
