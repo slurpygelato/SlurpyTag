@@ -44,10 +44,17 @@ export default function ContactsPage() {
           // #region agent log
           fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:42',message:'fetchContacts - raw contacts from DB',data:{contacts:JSON.parse(JSON.stringify(contacts))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
           // #endregion
+          // Raggruppa per email, quando trova duplicati AGGIORNA con il nuovo invece di ignorare
           const unique = contacts.reduce((acc: Owner[], current) => {
-            const x = acc.find(item => item.email.toLowerCase() === current.email.toLowerCase());
-            if (!x) return acc.concat([current]);
-            else return acc;
+            const existingIndex = acc.findIndex(item => item.email.toLowerCase() === current.email.toLowerCase());
+            if (existingIndex === -1) {
+              // Non esiste ancora, aggiungilo
+              return acc.concat([current]);
+            } else {
+              // Esiste già, AGGIORNA con il nuovo record (che è più recente)
+              acc[existingIndex] = current;
+              return acc;
+            }
           }, []);
           // #region agent log
           fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:49',message:'fetchContacts - unique contacts after grouping',data:{unique:JSON.parse(JSON.stringify(unique))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
@@ -105,6 +112,7 @@ export default function ContactsPage() {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:88',message:'Delete operation result',data:{deleteError:deleteError?.message,deleteData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
+        if (deleteError) throw deleteError;
 
         // 3. Prepara i nuovi dati (ogni contatto per ogni cane)
         const toInsert = [];
