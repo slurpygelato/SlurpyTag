@@ -82,13 +82,19 @@ export default function NFCPage() {
       <div className="w-full bg-white border-[3px] border-black rounded-[40px] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center space-y-6">
         
         {/* Feedback Visivo */}
-        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors ${status === 'scanning' ? 'bg-yellow-300 animate-pulse' : status === 'success' ? 'bg-green-400' : 'bg-[#F2F2F2]'}`}>
-          <span className="text-5xl">
-            {status === 'idle' && "📱"}
-            {status === 'scanning' && "📡"}
-            {status === 'success' && "✅"}
-            {status === 'error' && "❌"}
-          </span>
+        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${status === 'scanning' ? 'bg-yellow-300 animate-pulse' : status === 'success' ? 'bg-green-400' : 'bg-[#F2F2F2]'}`}>
+          {status === 'idle' && (
+            <>
+              {/* Onde radio pulsanti */}
+              <div className="absolute inset-0 rounded-full border-2 border-yellow-400 animate-ping opacity-75" style={{ animation: 'pulse-radio 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+              <div className="absolute inset-0 rounded-full border-2 border-yellow-400 animate-ping opacity-50" style={{ animation: 'pulse-radio 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.5s' }}></div>
+              <div className="absolute inset-0 rounded-full border-2 border-yellow-400 animate-ping opacity-25" style={{ animation: 'pulse-radio 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 1s' }}></div>
+              <span className="text-5xl relative z-10">📡</span>
+            </>
+          )}
+          {status === 'scanning' && <span className="text-5xl">📡</span>}
+          {status === 'success' && <span className="text-5xl">✅</span>}
+          {status === 'error' && <span className="text-5xl">❌</span>}
         </div>
 
         <div className="text-center">
@@ -128,6 +134,19 @@ export default function NFCPage() {
       >
         Torna alla Dashboard
       </button>
+
+      <style jsx>{`
+        @keyframes pulse-radio {
+          0% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1.8);
+            opacity: 0;
+          }
+        }
+      `}</style>
 
     </main>
   );
