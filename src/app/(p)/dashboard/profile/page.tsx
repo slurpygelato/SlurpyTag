@@ -41,11 +41,17 @@ export default function ContactsPage() {
         if (contacts && contacts.length > 0) {
           // Raggruppiamo per EMAIL per evitare di vedere 10 schede se hai 10 cani
           // Mostriamo solo la lista "unica" di persone
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:42',message:'fetchContacts - raw contacts from DB',data:{contacts:JSON.parse(JSON.stringify(contacts))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
           const unique = contacts.reduce((acc: Owner[], current) => {
             const x = acc.find(item => item.email.toLowerCase() === current.email.toLowerCase());
             if (!x) return acc.concat([current]);
             else return acc;
           }, []);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:49',message:'fetchContacts - unique contacts after grouping',data:{unique:JSON.parse(JSON.stringify(unique))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
           setOwners(unique);
         } else {
           setOwners([{ name: "", phone: "", email: "" }]);
@@ -60,12 +66,21 @@ export default function ContactsPage() {
   };
 
   const updateOwner = (index: number, field: keyof Owner, value: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:62',message:'updateOwner called',data:{index,field,value,valueType:typeof value},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     const newOwners = [...owners];
     newOwners[index][field] = value;
     setOwners(newOwners);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:66',message:'updateOwner state after update',data:{newOwner:newOwners[index]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
   };
 
   const handleSave = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:68',message:'handleSave entry - owners state before save',data:{owners:JSON.parse(JSON.stringify(owners))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     if (owners.some(o => !o.name || !o.phone)) {
       alert("Inserisci Nome e Telefono!");
       return;
@@ -83,7 +98,13 @@ export default function ContactsPage() {
         const petIds = pets.map(p => p.id);
 
         // 2. CANCELLA TUTTI i membri della famiglia per questi cani (Tabula Rasa)
-        await supabase.from('family_members').delete().in('pet_id', petIds);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:86',message:'Before delete operation',data:{petIds},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        const { error: deleteError, data: deleteData } = await supabase.from('family_members').delete().in('pet_id', petIds);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:88',message:'Delete operation result',data:{deleteError:deleteError?.message,deleteData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
 
         // 3. Prepara i nuovi dati (ogni contatto per ogni cane)
         const toInsert = [];
@@ -97,19 +118,34 @@ export default function ContactsPage() {
             });
           }
         }
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:100',message:'Data to insert prepared',data:{toInsert:JSON.parse(JSON.stringify(toInsert))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
 
         // 4. Inserisci i nuovi dati puliti
-        const { error: insertError } = await supabase.from('family_members').insert(toInsert);
+        const { error: insertError, data: insertData } = await supabase.from('family_members').insert(toInsert);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:104',message:'Insert operation result',data:{insertError:insertError?.message,insertData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         if (insertError) throw insertError;
       }
 
       alert("Contatti aggiornati! ✅");
       
       // Reset locale e refresh
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:111',message:'Before fetchContacts call',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       await fetchContacts(); 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:113',message:'After fetchContacts call',data:{owners:JSON.parse(JSON.stringify(owners))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       router.refresh();
       router.push('/dashboard');
     } catch (error: any) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:115',message:'Error in handleSave',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       alert("Errore: " + error.message);
     } finally {
       setSaving(false);
