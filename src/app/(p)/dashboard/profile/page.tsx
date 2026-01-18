@@ -33,10 +33,12 @@ export default function ContactsPage() {
       
       if (pets && pets.length > 0) {
         const petIds = pets.map(p => p.id);
+        // Selezioniamo anche id per poter ordinare in modo deterministico (più recente = id più alto)
         const { data: contacts } = await supabase
           .from('family_members')
-          .select('name, phone, email')
-          .in('pet_id', petIds);
+          .select('id, name, phone, email')
+          .in('pet_id', petIds)
+          .order('id', { ascending: false }); // Più recente per primo
 
         if (contacts && contacts.length > 0) {
           // Raggruppiamo per EMAIL per evitare di vedere 10 schede se hai 10 cani
@@ -44,15 +46,15 @@ export default function ContactsPage() {
           // #region agent log
           fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:42',message:'fetchContacts - raw contacts from DB',data:{contacts:JSON.parse(JSON.stringify(contacts))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
           // #endregion
-          // Raggruppa per email, quando trova duplicati AGGIORNA con il nuovo invece di ignorare
-          const unique = contacts.reduce((acc: Owner[], current) => {
+          // Raggruppa per email, prendendo sempre il PRIMO record (che è il più recente grazie all'order by id DESC)
+          // Così se ci sono duplicati, vince sempre il record più recente
+          const unique = contacts.reduce((acc: Owner[], current: any) => {
             const existingIndex = acc.findIndex(item => item.email.toLowerCase() === current.email.toLowerCase());
             if (existingIndex === -1) {
-              // Non esiste ancora, aggiungilo
-              return acc.concat([current]);
+              // Non esiste ancora, aggiungilo (senza il campo id, solo name, phone, email)
+              return acc.concat([{ name: current.name, phone: current.phone, email: current.email }]);
             } else {
-              // Esiste già, AGGIORNA con il nuovo record (che è più recente)
-              acc[existingIndex] = current;
+              // Esiste già, mantieni il primo (più recente) - non aggiornare
               return acc;
             }
           }, []);
