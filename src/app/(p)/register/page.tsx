@@ -220,6 +220,7 @@ export default function RegisterPage() {
           {step === 2 && (
             <div className="animate-in slide-in-from-right duration-500 space-y-4">
               <h2 className="slurpy-h2 italic uppercase text-center">Dati del cane</h2>
+              <p className="text-center text-gray-500 font-patrick text-sm italic">(Potrai aggiungere un secondo pelosetto dopo aver registrato il primo)</p>
               <input type="text" placeholder="NOME" className="slurpy-input text-center uppercase" value={petData.name} onChange={(e) => setPetData({...petData, name: e.target.value})} />
               <input type="text" placeholder="SOPRANNOME" className="slurpy-input text-center uppercase" value={petData.nickname} onChange={(e) => setPetData({...petData, nickname: e.target.value})} />
               <input type="text" placeholder="CITTÀ" className="slurpy-input text-center uppercase" value={petData.city} onChange={(e) => setPetData({...petData, city: e.target.value})} />
