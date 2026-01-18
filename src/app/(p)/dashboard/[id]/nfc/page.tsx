@@ -84,23 +84,7 @@ export default function NFCPage() {
         {/* Feedback Visivo */}
         <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${status === 'scanning' ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : status === 'error' ? 'bg-red-400' : 'bg-[#F2F2F2]'}`}>
           {status === 'idle' && (
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Onde sinistra */}
-              <path d="M6 24 Q8 20, 8 24 Q8 28, 10 24" stroke="#666" strokeWidth="2" fill="none" strokeLinecap="round"/>
-              <path d="M6 24 Q9 18, 9 24 Q9 30, 12 24" stroke="#666" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              <path d="M6 24 Q10 16, 10 24 Q10 32, 14 24" stroke="#666" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-              <path d="M6 24 Q11 14, 11 24 Q11 34, 16 24" stroke="#666" strokeWidth="1" fill="none" strokeLinecap="round"/>
-              
-              {/* Cerchio centrale con NFC */}
-              <circle cx="24" cy="24" r="8" fill="#666"/>
-              <text x="24" y="28" fontSize="6" fill="white" fontFamily="Arial, sans-serif" fontWeight="bold" textAnchor="middle">NFC</text>
-              
-              {/* Onde destra */}
-              <path d="M38 24 Q40 20, 40 24 Q40 28, 42 24" stroke="#666" strokeWidth="2" fill="none" strokeLinecap="round"/>
-              <path d="M39 24 Q39 18, 39 24 Q39 30, 36 24" stroke="#666" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              <path d="M42 24 Q38 16, 38 24 Q38 32, 34 24" stroke="#666" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-              <path d="M42 24 Q37 14, 37 24 Q37 34, 32 24" stroke="#666" strokeWidth="1" fill="none" strokeLinecap="round"/>
-            </svg>
+            <span className="slurpy-logo text-4xl uppercase text-gray-600">NFC</span>
           )}
           {status === 'scanning' && (
             <>
