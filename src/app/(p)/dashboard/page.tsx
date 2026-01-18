@@ -86,20 +86,11 @@ export default function DashboardPage() {
                     Gestisci Profilo
                   </Link>
 
-                  <Link href={`/dashboard/${pet.id}/nfc`} className="w-full">
-                    <div className={`flex items-center gap-3 p-3 rounded-2xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:scale-[1.02] active:scale-[0.98] ${pet.is_connected ? 'bg-[#98FF98]' : 'bg-gray-200 opacity-60'}`}>
-                      <div className={`text-2xl ${pet.is_connected ? 'animate-pulse' : ''}`}>
-                        {pet.is_connected ? '📶' : '📴'}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-patrick font-bold uppercase text-[10px] leading-tight text-left text-black">
-                          {pet.is_connected ? 'NFC COLLEGATO' : 'NFC NON CONNESSO'}
-                        </span>
-                        <span className="font-patrick text-[8px] uppercase text-black opacity-60 text-left">
-                          {pet.is_connected ? `ID: ${pet.nfc_id || 'OK'}` : 'CLICCA PER ASSOCIARE'}
-                        </span>
-                      </div>
-                    </div>
+                  <Link 
+                    href={`/dashboard/${pet.id}/nfc`} 
+                    className="btn-slurpy-secondary w-full text-center py-3 text-lg uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:brightness-95"
+                  >
+                    Configura NFC
                   </Link>
                 </div>
               </div>
