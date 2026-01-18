@@ -159,9 +159,15 @@ function AuthForm() {
 
   return (
     <div className="slurpy-card w-full max-w-md text-center">
-      <h1 className="slurpy-logo mb-10 text-6xl uppercase tracking-tight">
+      <h1 className="slurpy-logo mb-4 text-6xl uppercase tracking-tight">
         {isRegistering ? "NUOVO PROFILO" : "BENTORNATO"}
       </h1>
+
+      {message && !isSubmitted && (
+        <div className="mb-6 p-4 bg-yellow-50 border-2 border-dashed border-yellow-200 rounded-2xl font-patrick text-base uppercase text-red-500">
+          {message}
+        </div>
+      )}
       
       {!isSubmitted ? (
         <>
@@ -248,12 +254,6 @@ function AuthForm() {
           <p className="font-patrick text-xl mt-4 text-[#8e8e8e] uppercase">
             Controlla la posta per attivare il profilo!
           </p>
-        </div>
-      )}
-
-      {message && !isSubmitted && (
-        <div className="mt-6 p-4 bg-yellow-50 border-2 border-dashed border-yellow-200 rounded-2xl font-patrick text-lg uppercase text-red-500">
-          {message}
         </div>
       )}
     </div>
