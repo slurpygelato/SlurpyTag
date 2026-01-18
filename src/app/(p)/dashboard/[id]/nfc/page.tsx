@@ -31,8 +31,9 @@ export default function NFCPage() {
     const conferma = window.confirm(
       `⚠️ ATTENZIONE\n\n` +
       `Una volta scritto, il contenuto del tag NFC non sarà più modificabile.\n\n` +
-      `Assicurati di usare un tag NUOVO o VUOTO.\n\n` +
-      `Vuoi procedere con la configurazione per ${pet.name}?`
+      `Assicurati che i dati del profilo di ${pet.name.toUpperCase()} siano corretti prima di procedere.\n\n` +
+      `Usa un tag NUOVO o VUOTO.\n\n` +
+      `Vuoi procedere con la configurazione?`
     );
     
     if (!conferma) {
