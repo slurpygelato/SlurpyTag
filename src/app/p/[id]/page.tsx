@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 export default function PublicPetProfile() {
   const { id } = useParams();
   const [pet, setPet] = useState<any>(null);
+  const [contacts, setContacts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +20,19 @@ export default function PublicPetProfile() {
       
       if (data) {
         setPet(data);
-        // 2. Registra il Log della scansione
+        
+        // 2. Recupera i contatti dalla tabella family_members
+        const { data: familyData } = await supabase
+          .from('family_members')
+          .select('*')
+          .eq('pet_id', data.id)
+          .order('id', { ascending: true });
+        
+        if (familyData && familyData.length > 0) {
+          setContacts(familyData);
+        }
+        
+        // 3. Registra il Log della scansione
         registerScan(data.id);
       }
       setLoading(false);
@@ -66,8 +79,13 @@ export default function PublicPetProfile() {
   if (!pet) return <div className="min-h-screen flex items-center justify-center font-patrick uppercase text-xl text-black">Profilo non trovato 🦴</div>;
 
   const capitalizedName = pet.name ? pet.name.charAt(0).toUpperCase() + pet.name.slice(1).toLowerCase() : "";
-  const whatsappLink = pet.owner_phone 
-    ? `https://wa.me/${pet.owner_phone.replace(/\s+/g, '')}?text=Ciao! Ho trovato il tuo cane ${capitalizedName}!`
+  
+  // Prende il primo contatto disponibile con telefono
+  const primaryContact = contacts.find(c => c.phone) || null;
+  const primaryPhone = primaryContact?.phone || pet.owner_phone || null;
+  
+  const whatsappLink = primaryPhone 
+    ? `https://wa.me/${primaryPhone.replace(/\s+/g, '')}?text=Ciao! Ho trovato il tuo cane ${capitalizedName}!`
     : "#";
 
   return (
@@ -88,10 +106,25 @@ export default function PublicPetProfile() {
         <div className="space-y-6 text-left font-patrick">
           <div className="bg-[#BAE1FF] p-6 rounded-[30px] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
             <p className="text-center font-bold uppercase mb-4 text-lg">Contatta il mio proprietario</p>
-            {pet.owner_phone ? (
+            {contacts.length > 0 || primaryPhone ? (
               <div className="space-y-4">
-                <a href={`tel:${pet.owner_phone}`} className="block text-center text-2xl font-bold underline decoration-2 underline-offset-4">{pet.owner_phone}</a>
-                <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="w-full bg-[#25D366] text-white border-[3px] border-black rounded-2xl py-4 flex items-center justify-center gap-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all font-bold uppercase italic">Apri WhatsApp</a>
+                {/* Mostra tutti i contatti */}
+                {contacts.map((contact, index) => (
+                  <div key={index} className="text-center">
+                    {contact.name && <p className="text-sm uppercase text-gray-600 mb-1">{contact.name}</p>}
+                    {contact.phone && (
+                      <a href={`tel:${contact.phone}`} className="block text-2xl font-bold underline decoration-2 underline-offset-4">{contact.phone}</a>
+                    )}
+                  </div>
+                ))}
+                {/* Fallback: usa owner_phone se non ci sono contatti in family_members */}
+                {contacts.length === 0 && primaryPhone && (
+                  <a href={`tel:${primaryPhone}`} className="block text-center text-2xl font-bold underline decoration-2 underline-offset-4">{primaryPhone}</a>
+                )}
+                {/* Bottone WhatsApp */}
+                {primaryPhone && (
+                  <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="w-full bg-[#25D366] text-white border-[3px] border-black rounded-2xl py-4 flex items-center justify-center gap-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-1 transition-all font-bold uppercase italic">Apri WhatsApp</a>
+                )}
               </div>
             ) : (
               <p className="text-center italic text-gray-500 uppercase text-xs">Nessun contatto disponibile</p>
