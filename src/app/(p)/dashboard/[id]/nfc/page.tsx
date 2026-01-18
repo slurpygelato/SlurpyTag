@@ -7,8 +7,7 @@ export default function NFCPage() {
   const router = useRouter();
   const { id } = useParams();
   const [pet, setPet] = useState<any>(null);
-  const [status, setStatus] = useState<"idle" | "scanning" | "success" | "error">("idle");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "scanning" | "success">("idle");
 
   useEffect(() => {
     fetchPet();
@@ -22,8 +21,7 @@ export default function NFCPage() {
   const handleConnectNFC = async () => {
     // 1. Verifica supporto browser
     if (!('NDEFReader' in window)) {
-      setErrorMessage("Il tuo browser non supporta l'NFC. Usa Chrome su Android.");
-      setStatus("error");
+      alert("Il tuo browser non supporta l'NFC. Usa Chrome su Android.");
       return;
     }
 
@@ -71,18 +69,9 @@ export default function NFCPage() {
       router.replace('/dashboard');
 
     } catch (error: any) {
-      console.error("NFC Error:", error);
-      
-      if (error.name === "NotAllowedError") {
-        setErrorMessage("Permesso NFC negato. Controlla le impostazioni del browser.");
-      } else if (error.name === "NotSupportedError") {
-        setErrorMessage("NFC non supportato su questo dispositivo.");
-      } else if (error.name === "NetworkError") {
-        setErrorMessage("Tag rimosso troppo presto. Tieni il tag fermo più a lungo.");
-      } else {
-        setErrorMessage("Errore NFC. Usa un tag nuovo/vuoto e riprova.");
-      }
-      setStatus("error");
+      // Non mostrare errori - Android aprirà direttamente l'URL del tag
+      console.log("NFC intercettato da Android:", error);
+      setStatus("idle");
     }
   };
 
@@ -104,7 +93,7 @@ export default function NFCPage() {
       <div className="w-full bg-white border-[3px] border-black rounded-[40px] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center space-y-6">
         
         {/* Feedback Visivo */}
-        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${status === 'scanning' ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : status === 'error' ? 'bg-red-400' : 'bg-[#F2F2F2]'}`}>
+        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${status === 'scanning' ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : 'bg-[#F2F2F2]'}`}>
           {status === 'idle' && (
             <span className="text-3xl font-bold uppercase font-patrick text-gray-600">NFC</span>
           )}
@@ -118,7 +107,6 @@ export default function NFCPage() {
             </>
           )}
           {status === 'success' && <span className="text-5xl">✅</span>}
-          {status === 'error' && <span className="text-5xl">❌</span>}
         </div>
 
         <div className="text-center">
@@ -138,10 +126,6 @@ export default function NFCPage() {
           {status === 'idle' && "Clicca il tasto e tocca la medaglietta per attivarla."}
           {status === 'success' && "Tag configurato con successo!"}
         </p>
-
-        {status === 'error' && (
-            <p className="text-red-500 font-patrick text-xs uppercase font-bold text-center">{errorMessage}</p>
-        )}
 
         <button 
           onClick={handleConnectNFC}
