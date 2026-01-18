@@ -84,7 +84,7 @@ export default function NFCPage() {
         {/* Feedback Visivo */}
         <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${status === 'scanning' ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : status === 'error' ? 'bg-red-400' : 'bg-[#F2F2F2]'}`}>
           {status === 'idle' && (
-            <span className="slurpy-logo text-4xl uppercase text-gray-600">NFC</span>
+            <span className="text-3xl font-bold uppercase font-patrick text-gray-600">NFC</span>
           )}
           {status === 'scanning' && (
             <>
