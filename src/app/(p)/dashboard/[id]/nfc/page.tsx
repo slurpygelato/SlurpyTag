@@ -111,14 +111,6 @@ export default function NFCPage() {
 
         <div className="text-center">
           <h2 className="text-3xl font-bold uppercase font-patrick">{pet.name}</h2>
-          <p className="text-gray-400 font-patrick uppercase text-sm tracking-widest">Stato Collegamento</p>
-        </div>
-
-        {/* Badge Stato (Legge la tua colonna is_connected) */}
-        <div className={`w-full py-4 border-2 border-dashed rounded-[20px] flex items-center justify-center gap-2 ${pet.is_connected ? 'border-green-300 bg-green-50' : 'border-gray-300'}`}>
-          <span className="font-patrick font-bold uppercase">
-            {pet.is_connected ? "✨ Tag Connesso" : "⭕ Non Connesso"}
-          </span>
         </div>
 
         <p className="text-center font-patrick text-gray-500 text-sm uppercase px-4 leading-tight">
@@ -132,7 +124,7 @@ export default function NFCPage() {
           disabled={status === 'scanning'}
           className="btn-slurpy-primary w-full py-5 text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold disabled:opacity-50"
         >
-          {status === 'scanning' ? "In ascolto..." : "Connetti Ora"}
+          {status === 'scanning' ? "In ascolto..." : "Scrivi dati su NFC"}
         </button>
       </div>
 
