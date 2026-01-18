@@ -7,9 +7,8 @@ export default function NFCPage() {
   const router = useRouter();
   const { id } = useParams();
   const [pet, setPet] = useState<any>(null);
-  const [status, setStatus] = useState<"idle" | "scanning" | "confirm" | "writing" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "scanning" | "writing" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [existingData, setExistingData] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPet();
@@ -20,7 +19,7 @@ export default function NFCPage() {
     if (data) setPet(data);
   };
 
-  const handleConnectNFC = async (forceWrite: boolean = false) => {
+  const handleConnectNFC = async () => {
     // 1. Verifica supporto browser
     if (!('NDEFReader' in window)) {
       setErrorMessage("Il tuo browser non supporta l'NFC. Usa Chrome su Android.");
@@ -29,42 +28,40 @@ export default function NFCPage() {
     }
 
     try {
-      setStatus(forceWrite ? "writing" : "scanning");
+      setStatus("scanning");
       
       // @ts-ignore
       const ndef = new NDEFReader();
       
-      if (forceWrite) {
-        // Scrittura diretta senza controllo dati esistenti
-        ndef.addEventListener("reading", async () => {
-          await writeToTag(ndef);
-        });
-      } else {
-        // Prima leggiamo il tag per vedere se ha già dati
-        ndef.addEventListener("reading", async ({ message }: any) => {
-          // Controlla se il tag ha già dei record
-          if (message.records && message.records.length > 0) {
-            // Il tag ha già dei dati
-            let existingContent = "";
-            for (const record of message.records) {
-              if (record.recordType === "url" || record.recordType === "text") {
-                const decoder = new TextDecoder();
-                existingContent = decoder.decode(record.data);
-                break;
-              }
-            }
-            
-            if (existingContent) {
-              setExistingData(existingContent);
-              setStatus("confirm");
-              return;
+      // Quando il tag viene rilevato
+      ndef.addEventListener("reading", async ({ message }: any) => {
+        // Controlla se il tag ha già dei record
+        let hasExistingData = false;
+        
+        if (message.records && message.records.length > 0) {
+          for (const record of message.records) {
+            if (record.recordType === "url" || record.recordType === "text") {
+              hasExistingData = true;
+              break;
             }
           }
+        }
+        
+        // Se ha dati, chiedi conferma con window.confirm (sincrono, il tag è ancora vicino)
+        if (hasExistingData) {
+          const shouldOverwrite = window.confirm(
+            `Il tag ha già dei dati salvati.\n\nVuoi sovrascriverli con il profilo di ${pet.name}?`
+          );
           
-          // Tag vuoto o senza dati riconoscibili, procedi direttamente
-          await writeToTag(ndef);
-        });
-      }
+          if (!shouldOverwrite) {
+            setStatus("idle");
+            return;
+          }
+        }
+        
+        // Procedi con la scrittura (tag ancora vicino)
+        await writeToTag(ndef);
+      });
 
       await ndef.scan();
 
@@ -99,7 +96,6 @@ export default function NFCPage() {
       if (error) throw error;
 
       setStatus("success");
-      setExistingData(null);
       fetchPet();
 
     } catch (error: any) {
@@ -107,16 +103,6 @@ export default function NFCPage() {
       setErrorMessage("Errore di scrittura. Avvicina meglio il tag al retro del telefono.");
       setStatus("error");
     }
-  };
-
-  const handleConfirmOverwrite = () => {
-    // Riavvia lo scan ma questa volta scrivi direttamente
-    handleConnectNFC(true);
-  };
-
-  const handleCancelOverwrite = () => {
-    setStatus("idle");
-    setExistingData(null);
   };
 
   if (!pet) return <div className="p-10 text-center font-patrick uppercase text-black">Caricamento...</div>;
@@ -137,7 +123,7 @@ export default function NFCPage() {
       <div className="w-full bg-white border-[3px] border-black rounded-[40px] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center space-y-6">
         
         {/* Feedback Visivo */}
-        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${(status === 'scanning' || status === 'writing') ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : status === 'error' ? 'bg-red-400' : status === 'confirm' ? 'bg-yellow-300' : 'bg-[#F2F2F2]'}`}>
+        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${(status === 'scanning' || status === 'writing') ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : status === 'error' ? 'bg-red-400' : 'bg-[#F2F2F2]'}`}>
           {status === 'idle' && (
             <span className="text-3xl font-bold uppercase font-patrick text-gray-600">NFC</span>
           )}
@@ -150,7 +136,6 @@ export default function NFCPage() {
               <div className="absolute inset-0 rounded-full border-3 border-[#FF8CB8] animate-ping opacity-10" style={{ animation: 'pulse-radio 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.9s' }}></div>
             </>
           )}
-          {status === 'confirm' && <span className="text-5xl">⚠️</span>}
           {status === 'success' && <span className="text-5xl">✅</span>}
           {status === 'error' && <span className="text-5xl">❌</span>}
         </div>
@@ -169,50 +154,22 @@ export default function NFCPage() {
 
         <p className="text-center font-patrick text-gray-500 text-sm uppercase px-4 leading-tight">
           {status === 'scanning' && "Avvicina la medaglietta al retro del telefono..."}
-          {status === 'writing' && "Avvicina la medaglietta per sovrascrivere..."}
+          {status === 'writing' && "Scrittura in corso..."}
           {status === 'idle' && "Clicca il tasto e tocca la medaglietta per attivarla."}
           {status === 'success' && "Tag configurato con successo!"}
-          {status === 'confirm' && "Il tag contiene già dei dati."}
         </p>
 
         {status === 'error' && (
             <p className="text-red-500 font-patrick text-xs uppercase font-bold text-center">{errorMessage}</p>
         )}
 
-        {/* Dialogo di conferma sovrascrittura */}
-        {status === 'confirm' && (
-          <div className="w-full space-y-3">
-            <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4">
-              <p className="font-patrick text-sm text-center uppercase text-yellow-800">
-                Questo tag ha già dei dati salvati. Vuoi sovrascriverli con il profilo di <strong>{pet.name}</strong>?
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={handleCancelOverwrite}
-                className="flex-1 py-4 bg-gray-200 border-[3px] border-black rounded-2xl font-patrick font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
-              >
-                Annulla
-              </button>
-              <button 
-                onClick={handleConfirmOverwrite}
-                className="flex-1 py-4 bg-[#FF8CB8] border-[3px] border-black rounded-2xl font-patrick font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
-              >
-                Sovrascrivi
-              </button>
-            </div>
-          </div>
-        )}
-
-        {status !== 'confirm' && (
-          <button 
-            onClick={handleConnectNFC}
-            disabled={status === 'scanning' || status === 'writing'}
-            className="btn-slurpy-primary w-full py-5 text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold disabled:opacity-50"
-          >
-            {(status === 'scanning' || status === 'writing') ? "In ascolto..." : "Connetti Ora"}
-          </button>
-        )}
+        <button 
+          onClick={handleConnectNFC}
+          disabled={status === 'scanning' || status === 'writing'}
+          className="btn-slurpy-primary w-full py-5 text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold disabled:opacity-50"
+        >
+          {(status === 'scanning' || status === 'writing') ? "In ascolto..." : "Connetti Ora"}
+        </button>
       </div>
 
       <button 
