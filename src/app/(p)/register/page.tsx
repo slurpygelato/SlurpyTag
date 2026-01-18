@@ -48,6 +48,10 @@ export default function RegisterPage() {
       if (!session) {
         router.push("/login?mode=signin");
       } else {
+        // Precompila l'email con quella dell'utente loggato
+        if (session.user.email) {
+          setOwners([{ name: "", phone: "", email: session.user.email }]);
+        }
         setLoading(false);
         setMounted(true);
       }
@@ -195,7 +199,7 @@ export default function RegisterPage() {
 
           {step === 1 && (
             <div className="animate-in slide-in-from-right duration-500 space-y-4">
-              <h2 className="slurpy-h2 italic uppercase text-center">Contatti Proprietario</h2>
+              <h2 className="slurpy-h2 italic uppercase text-center">Contatti proprietario</h2>
               {owners.map((owner, i) => (
                 <div key={i} className="space-y-3 p-5 bg-white/40 rounded-[30px] border-2 border-black/5">
                   <input type="text" placeholder="IL TUO NOME" className="slurpy-input text-center uppercase" value={owner.name} onChange={(e) => updateOwner(i, 'name', e.target.value)} />
@@ -215,7 +219,7 @@ export default function RegisterPage() {
 
           {step === 2 && (
             <div className="animate-in slide-in-from-right duration-500 space-y-4">
-              <h2 className="slurpy-h2 italic uppercase text-center">DATI CANE</h2>
+              <h2 className="slurpy-h2 italic uppercase text-center">Dati del cane</h2>
               <input type="text" placeholder="NOME" className="slurpy-input text-center uppercase" value={petData.name} onChange={(e) => setPetData({...petData, name: e.target.value})} />
               <input type="text" placeholder="SOPRANNOME" className="slurpy-input text-center uppercase" value={petData.nickname} onChange={(e) => setPetData({...petData, nickname: e.target.value})} />
               <input type="text" placeholder="CITTÀ" className="slurpy-input text-center uppercase" value={petData.city} onChange={(e) => setPetData({...petData, city: e.target.value})} />
