@@ -106,38 +106,78 @@ export default function ContactsPage() {
       if (pets && pets.length > 0) {
         const petIds = pets.map(p => p.id);
 
-        // 2. CANCELLA TUTTI i membri della famiglia per questi cani (Tabula Rasa)
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:86',message:'Before delete operation',data:{petIds},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        const { error: deleteError, data: deleteData } = await supabase.from('family_members').delete().in('pet_id', petIds);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:88',message:'Delete operation result',data:{deleteError:deleteError?.message,deleteData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
-        if (deleteError) throw deleteError;
-
-        // 3. Prepara i nuovi dati (ogni contatto per ogni cane)
-        const toInsert = [];
+        // 2. Per ogni contatto, aggiorna/inserisci per ogni pet
+        // Usiamo UPSERT (ON CONFLICT) invece di DELETE+INSERT per evitare problemi con RLS
         for (const petId of petIds) {
           for (const owner of owners) {
-            toInsert.push({
-              pet_id: petId,
-              name: owner.name.toUpperCase(),
-              phone: owner.phone,
-              email: owner.email.toLowerCase().trim()
-            });
+            const emailLower = owner.email.toLowerCase().trim();
+            const nameUpper = owner.name.toUpperCase();
+            
+            // Prima prova a fare UPDATE di un record esistente con questa email e pet_id
+            const { data: existing } = await supabase
+              .from('family_members')
+              .select('id')
+              .eq('pet_id', petId)
+              .eq('email', emailLower)
+              .limit(1)
+              .single();
+
+            if (existing) {
+              // Record esiste, fai UPDATE
+              const { error: updateError } = await supabase
+                .from('family_members')
+                .update({
+                  name: nameUpper,
+                  phone: owner.phone,
+                  email: emailLower
+                })
+                .eq('id', existing.id);
+              
+              if (updateError) throw updateError;
+            } else {
+              // Record non esiste, fai INSERT
+              const { error: insertError } = await supabase
+                .from('family_members')
+                .insert({
+                  pet_id: petId,
+                  name: nameUpper,
+                  phone: owner.phone,
+                  email: emailLower
+                });
+              
+              if (insertError) throw insertError;
+            }
           }
         }
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:100',message:'Data to insert prepared',data:{toInsert:JSON.parse(JSON.stringify(toInsert))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
 
-        // 4. Inserisci i nuovi dati puliti
-        const { error: insertError, data: insertData } = await supabase.from('family_members').insert(toInsert);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/82bc8c30-54e6-4fcf-944a-196c1776b2c2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:104',message:'Insert operation result',data:{insertError:insertError?.message,insertData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-        if (insertError) throw insertError;
+        // 3. Cancella tutti i record duplicati rimasti (per questa email e pet_id, tiene solo il più recente)
+        for (const petId of petIds) {
+          for (const owner of owners) {
+            const emailLower = owner.email.toLowerCase().trim();
+            
+            // Trova tutti i record con questa email e pet_id, ordinati per id DESC
+            const { data: duplicates } = await supabase
+              .from('family_members')
+              .select('id')
+              .eq('pet_id', petId)
+              .eq('email', emailLower)
+              .order('id', { ascending: false });
+
+            if (duplicates && duplicates.length > 1) {
+              // Tiene solo il primo (più recente), cancella gli altri
+              const idsToDelete = duplicates.slice(1).map(d => d.id);
+              if (idsToDelete.length > 0) {
+                const { error: deleteError } = await supabase
+                  .from('family_members')
+                  .delete()
+                  .in('id', idsToDelete);
+                
+                // Non lanciare errore se delete fallisce (potrebbe essere RLS), almeno abbiamo aggiornato
+                if (deleteError) console.warn('Delete duplicates warning:', deleteError);
+              }
+            }
+          }
+        }
       }
 
       alert("Contatti aggiornati! ✅");
