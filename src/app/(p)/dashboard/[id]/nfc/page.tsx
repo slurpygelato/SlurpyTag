@@ -33,40 +33,66 @@ export default function NFCPage() {
       // @ts-ignore
       const ndef = new NDEFReader();
       
+      // IMPORTANTE: Prima facciamo scan() per "bloccare" l'NFC reader
+      // Questo impedisce (in teoria) al sistema operativo di aprire l'URL
+      const abortController = new AbortController();
+      
+      await ndef.scan({ signal: abortController.signal });
+      
       // L'URL che verrà scritto sulla medaglietta
       const publicUrl = `${window.location.origin}/p/${pet.id}`;
+      
+      // Quando un tag viene rilevato
+      ndef.onreading = async (event: any) => {
+        try {
+          // Ferma lo scan
+          abortController.abort();
+          
+          // Piccolo delay per assicurarsi che il tag sia pronto per la scrittura
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Crea un nuovo NDEFReader per la scrittura
+          // @ts-ignore
+          const ndefWriter = new NDEFReader();
+          
+          // Scrittura con overwrite
+          await ndefWriter.write({
+            records: [{ recordType: "url", data: publicUrl }]
+          });
 
-      // Scrittura diretta con overwrite automatico
-      // write() aspetta automaticamente che un tag sia presente
-      await ndef.write(
-        { records: [{ recordType: "url", data: publicUrl }] },
-        { overwrite: true }
-      );
+          // Aggiornamento Database Supabase
+          const { error } = await supabase
+            .from('pets')
+            .update({ 
+              is_connected: true,
+              NFC_id: pet.id
+            })
+            .eq('id', id);
 
-      // Aggiornamento Database Supabase
-      const { error } = await supabase
-        .from('pets')
-        .update({ 
-          is_connected: true,
-          NFC_id: pet.id
-        })
-        .eq('id', id);
+          if (error) throw error;
 
-      if (error) throw error;
-
-      setStatus("success");
-      fetchPet();
+          setStatus("success");
+          fetchPet();
+          
+        } catch (writeError: any) {
+          console.error("Write Error:", writeError);
+          setErrorMessage("Errore di scrittura. Tieni il tag fermo e riprova.");
+          setStatus("error");
+        }
+      };
+      
+      ndef.onreadingerror = () => {
+        setErrorMessage("Errore di lettura tag. Riprova.");
+        setStatus("error");
+      };
 
     } catch (error: any) {
       console.error("NFC Error:", error);
       
-      // Messaggio più specifico in base all'errore
       if (error.name === "NotAllowedError") {
         setErrorMessage("Permesso NFC negato. Controlla le impostazioni del browser.");
       } else if (error.name === "NotSupportedError") {
         setErrorMessage("NFC non supportato su questo dispositivo.");
-      } else if (error.name === "NetworkError") {
-        setErrorMessage("Tag rimosso troppo presto. Tieni il tag fermo più a lungo.");
       } else {
         setErrorMessage("Errore NFC. Assicurati che l'NFC sia attivo e riprova.");
       }
