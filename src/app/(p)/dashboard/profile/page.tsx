@@ -112,26 +112,53 @@ export default function ContactsPage() {
             const emailLower = owner.email.toLowerCase().trim();
             const nameUpper = owner.name.toUpperCase();
             
+            console.log('[DEBUG] Saving contact:', { petId, emailLower, nameUpper, phone: owner.phone });
+            
             // Trova TUTTI i record con questa email e pet_id (potrebbero esserci duplicati)
-            const { data: existingRecords } = await supabase
+            const { data: existingRecords, error: selectError } = await supabase
               .from('family_members')
-              .select('id')
+              .select('id, email, phone, name')
               .eq('pet_id', petId)
               .eq('email', emailLower)
               .order('id', { ascending: false }); // Più recente per primo
 
+            console.log('[DEBUG] Existing records found:', existingRecords, 'Error:', selectError);
+
             if (existingRecords && existingRecords.length > 0) {
               // Record esistono - aggiorna SOLO il più recente (il primo)
-              const { error: updateError } = await supabase
+              console.log('[DEBUG] Updating record id:', existingRecords[0].id);
+              
+              const { data: updateData, error: updateError } = await supabase
                 .from('family_members')
                 .update({
                   name: nameUpper,
                   phone: owner.phone,
                   email: emailLower
                 })
-                .eq('id', existingRecords[0].id); // Aggiorna solo il più recente
+                .eq('id', existingRecords[0].id)
+                .select(); // Aggiungiamo .select() per vedere cosa restituisce
+              
+              console.log('[DEBUG] Update result:', updateData, 'Error:', updateError);
               
               if (updateError) throw updateError;
+              
+              // Se updateData è vuoto/null, l'update non ha funzionato (probabilmente RLS)
+              if (!updateData || updateData.length === 0) {
+                console.warn('[DEBUG] UPDATE returned no data - RLS might be blocking. Trying direct update by pet_id...');
+                
+                // Prova un approccio diverso: aggiorna TUTTI i record con questa email e pet_id
+                const { data: updateData2, error: updateError2 } = await supabase
+                  .from('family_members')
+                  .update({
+                    name: nameUpper,
+                    phone: owner.phone
+                  })
+                  .eq('pet_id', petId)
+                  .eq('email', emailLower)
+                  .select();
+                
+                console.log('[DEBUG] Alternative update result:', updateData2, 'Error:', updateError2);
+              }
 
               // Cancella tutti gli altri duplicati (dal secondo in poi)
               if (existingRecords.length > 1) {
@@ -142,19 +169,22 @@ export default function ContactsPage() {
                   .in('id', idsToDelete);
                 
                 // Non lanciare errore se delete fallisce (potrebbe essere RLS)
-                if (deleteError) console.warn('Delete duplicates warning:', deleteError);
+                if (deleteError) console.warn('[DEBUG] Delete duplicates warning:', deleteError);
               }
             } else {
               // Nessun record esiste - fai INSERT
-              const { error: insertError } = await supabase
+              console.log('[DEBUG] No existing record found, inserting new one');
+              const { data: insertData, error: insertError } = await supabase
                 .from('family_members')
                 .insert({
                   pet_id: petId,
                   name: nameUpper,
                   phone: owner.phone,
                   email: emailLower
-                });
+                })
+                .select();
               
+              console.log('[DEBUG] Insert result:', insertData, 'Error:', insertError);
               if (insertError) throw insertError;
             }
           }
