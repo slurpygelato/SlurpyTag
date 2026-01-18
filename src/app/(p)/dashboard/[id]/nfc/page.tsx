@@ -10,7 +10,6 @@ export default function NFCPage() {
   const [status, setStatus] = useState<"idle" | "scanning" | "confirm" | "writing" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [existingData, setExistingData] = useState<string | null>(null);
-  const [ndefReader, setNdefReader] = useState<any>(null);
 
   useEffect(() => {
     fetchPet();
@@ -21,7 +20,7 @@ export default function NFCPage() {
     if (data) setPet(data);
   };
 
-  const handleConnectNFC = async () => {
+  const handleConnectNFC = async (forceWrite: boolean = false) => {
     // 1. Verifica supporto browser
     if (!('NDEFReader' in window)) {
       setErrorMessage("Il tuo browser non supporta l'NFC. Usa Chrome su Android.");
@@ -30,36 +29,42 @@ export default function NFCPage() {
     }
 
     try {
-      setStatus("scanning");
+      setStatus(forceWrite ? "writing" : "scanning");
       
       // @ts-ignore
       const ndef = new NDEFReader();
-      setNdefReader(ndef);
       
-      // Prima leggiamo il tag per vedere se ha già dati
-      ndef.addEventListener("reading", async ({ message, serialNumber }: any) => {
-        // Controlla se il tag ha già dei record
-        if (message.records && message.records.length > 0) {
-          // Il tag ha già dei dati
-          let existingContent = "";
-          for (const record of message.records) {
-            if (record.recordType === "url" || record.recordType === "text") {
-              const decoder = new TextDecoder();
-              existingContent = decoder.decode(record.data);
-              break;
+      if (forceWrite) {
+        // Scrittura diretta senza controllo dati esistenti
+        ndef.addEventListener("reading", async () => {
+          await writeToTag(ndef);
+        });
+      } else {
+        // Prima leggiamo il tag per vedere se ha già dati
+        ndef.addEventListener("reading", async ({ message }: any) => {
+          // Controlla se il tag ha già dei record
+          if (message.records && message.records.length > 0) {
+            // Il tag ha già dei dati
+            let existingContent = "";
+            for (const record of message.records) {
+              if (record.recordType === "url" || record.recordType === "text") {
+                const decoder = new TextDecoder();
+                existingContent = decoder.decode(record.data);
+                break;
+              }
+            }
+            
+            if (existingContent) {
+              setExistingData(existingContent);
+              setStatus("confirm");
+              return;
             }
           }
           
-          if (existingContent) {
-            setExistingData(existingContent);
-            setStatus("confirm");
-            return;
-          }
-        }
-        
-        // Tag vuoto o senza dati riconoscibili, procedi direttamente
-        await writeToTag(ndef);
-      });
+          // Tag vuoto o senza dati riconoscibili, procedi direttamente
+          await writeToTag(ndef);
+        });
+      }
 
       await ndef.scan();
 
@@ -70,14 +75,7 @@ export default function NFCPage() {
     }
   };
 
-  const writeToTag = async (ndef?: any) => {
-    const reader = ndef || ndefReader;
-    if (!reader) {
-      setErrorMessage("Errore: lettore NFC non disponibile.");
-      setStatus("error");
-      return;
-    }
-
+  const writeToTag = async (ndef: any) => {
     try {
       setStatus("writing");
       
@@ -85,7 +83,7 @@ export default function NFCPage() {
       const publicUrl = `${window.location.origin}/p/${pet.id}`;
 
       // Scrittura fisica sul tag
-      await reader.write({
+      await ndef.write({
         records: [{ recordType: "url", data: publicUrl }]
       });
 
@@ -112,7 +110,8 @@ export default function NFCPage() {
   };
 
   const handleConfirmOverwrite = () => {
-    writeToTag();
+    // Riavvia lo scan ma questa volta scrivi direttamente
+    handleConnectNFC(true);
   };
 
   const handleCancelOverwrite = () => {
@@ -170,7 +169,7 @@ export default function NFCPage() {
 
         <p className="text-center font-patrick text-gray-500 text-sm uppercase px-4 leading-tight">
           {status === 'scanning' && "Avvicina la medaglietta al retro del telefono..."}
-          {status === 'writing' && "Scrittura in corso..."}
+          {status === 'writing' && "Avvicina la medaglietta per sovrascrivere..."}
           {status === 'idle' && "Clicca il tasto e tocca la medaglietta per attivarla."}
           {status === 'success' && "Tag configurato con successo!"}
           {status === 'confirm' && "Il tag contiene già dei dati."}
