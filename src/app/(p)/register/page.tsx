@@ -81,6 +81,46 @@ export default function RegisterPage() {
     setPhotos(newPhotos);
   };
 
+  const validateStep2 = () => {
+    if (!petData.name.trim()) {
+      alert("Inserisci il NOME del cane!");
+      return false;
+    }
+    if (!petData.city.trim()) {
+      alert("Inserisci la CITTÀ!");
+      return false;
+    }
+    if (!petData.province.trim()) {
+      alert("Inserisci la PROVINCIA!");
+      return false;
+    }
+    if (!petData.region.trim()) {
+      alert("Inserisci la REGIONE!");
+      return false;
+    }
+    return true;
+  };
+
+  const validateStep3 = () => {
+    if (!petData.gender) {
+      alert("Seleziona il SESSO (Maschio/Femmina)!");
+      return false;
+    }
+    if (!petData.microchip) {
+      alert("Seleziona se il cane ha il MICROCHIP (Sì/No)!");
+      return false;
+    }
+    return true;
+  };
+
+  const validateStep5 = () => {
+    if (photos.length === 0) {
+      alert("Carica almeno UNA FOTO del cane!");
+      return false;
+    }
+    return true;
+  };
+
   const updateOwner = (index: number, field: keyof Owner, value: string) => {
     const newOwners = [...owners];
     newOwners[index][field] = value;
@@ -229,7 +269,7 @@ export default function RegisterPage() {
                 <input type="text" placeholder="REGIONE" className="slurpy-input text-center uppercase" value={petData.region} onChange={(e) => setPetData({...petData, region: e.target.value})} />
               </div>
               <div className="pt-4 space-y-3">
-                <button onClick={() => setStep(3)} className="btn-slurpy-primary uppercase">Avanti</button>
+                <button onClick={() => { if (validateStep2()) setStep(3); }} className="btn-slurpy-primary uppercase">Avanti</button>
                 <button onClick={() => setStep(1)} className="btn-slurpy-secondary uppercase">Indietro</button>
               </div>
             </div>
@@ -269,7 +309,7 @@ export default function RegisterPage() {
                 )}
               </div>
               <div className="pt-4 space-y-3">
-                <button onClick={() => setStep(4)} className="btn-slurpy-primary uppercase">Avanti</button>
+                <button onClick={() => { if (validateStep3()) setStep(4); }} className="btn-slurpy-primary uppercase">Avanti</button>
                 <button onClick={() => setStep(2)} className="btn-slurpy-secondary uppercase">Indietro</button>
               </div>
             </div>
@@ -310,7 +350,7 @@ export default function RegisterPage() {
                 ))}
               </div>
               <div className="pt-4 space-y-3">
-                <button onClick={() => setStep(6)} className="btn-slurpy-primary uppercase">Riepilogo</button>
+                <button onClick={() => { if (validateStep5()) setStep(6); }} className="btn-slurpy-primary uppercase">Riepilogo</button>
                 <button onClick={() => setStep(4)} className="btn-slurpy-secondary uppercase">Indietro</button>
               </div>
             </div>
