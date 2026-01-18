@@ -66,8 +66,9 @@ export default function NFCPage() {
 
       if (error) throw error;
 
-      setStatus("success");
-      fetchPet();
+      // Redirect IMMEDIATO alla dashboard con messaggio
+      alert(`✅ Tag registrato con successo per ${pet.name.toUpperCase()}!`);
+      router.replace('/dashboard');
 
     } catch (error: any) {
       console.error("NFC Error:", error);
