@@ -7,7 +7,7 @@ export default function NFCPage() {
   const router = useRouter();
   const { id } = useParams();
   const [pet, setPet] = useState<any>(null);
-  const [status, setStatus] = useState<"idle" | "scanning" | "writing" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "scanning" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -33,53 +33,10 @@ export default function NFCPage() {
       // @ts-ignore
       const ndef = new NDEFReader();
       
-      // Quando il tag viene rilevato
-      ndef.addEventListener("reading", async ({ message }: any) => {
-        // Controlla se il tag ha già dei record
-        let hasExistingData = false;
-        
-        if (message.records && message.records.length > 0) {
-          for (const record of message.records) {
-            if (record.recordType === "url" || record.recordType === "text") {
-              hasExistingData = true;
-              break;
-            }
-          }
-        }
-        
-        // Se ha dati, chiedi conferma con window.confirm (sincrono, il tag è ancora vicino)
-        if (hasExistingData) {
-          const shouldOverwrite = window.confirm(
-            `Il tag ha già dei dati salvati.\n\nVuoi sovrascriverli con il profilo di ${pet.name}?`
-          );
-          
-          if (!shouldOverwrite) {
-            setStatus("idle");
-            return;
-          }
-        }
-        
-        // Procedi con la scrittura (tag ancora vicino)
-        await writeToTag(ndef);
-      });
-
-      await ndef.scan();
-
-    } catch (error: any) {
-      console.error(error);
-      setErrorMessage("Errore di lettura. Avvicina meglio il tag al retro del telefono.");
-      setStatus("error");
-    }
-  };
-
-  const writeToTag = async (ndef: any) => {
-    try {
-      setStatus("writing");
-      
       // L'URL che verrà scritto sulla medaglietta
       const publicUrl = `${window.location.origin}/p/${pet.id}`;
 
-      // Scrittura fisica sul tag
+      // Scrittura diretta - sovrascrive sempre qualsiasi dato esistente
       await ndef.write({
         records: [{ recordType: "url", data: publicUrl }]
       });
@@ -123,11 +80,11 @@ export default function NFCPage() {
       <div className="w-full bg-white border-[3px] border-black rounded-[40px] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center space-y-6">
         
         {/* Feedback Visivo */}
-        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${(status === 'scanning' || status === 'writing') ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : status === 'error' ? 'bg-red-400' : 'bg-[#F2F2F2]'}`}>
+        <div className={`w-32 h-32 border-[3px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors relative overflow-visible ${status === 'scanning' ? 'bg-[#FF8CB8]' : status === 'success' ? 'bg-green-400' : status === 'error' ? 'bg-red-400' : 'bg-[#F2F2F2]'}`}>
           {status === 'idle' && (
             <span className="text-3xl font-bold uppercase font-patrick text-gray-600">NFC</span>
           )}
-          {(status === 'scanning' || status === 'writing') && (
+          {status === 'scanning' && (
             <>
               {/* Cerchi pulsanti rosa */}
               <div className="absolute inset-0 rounded-full border-3 border-[#FF8CB8] animate-ping opacity-75" style={{ animation: 'pulse-radio 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
@@ -154,7 +111,6 @@ export default function NFCPage() {
 
         <p className="text-center font-patrick text-gray-500 text-sm uppercase px-4 leading-tight">
           {status === 'scanning' && "Avvicina la medaglietta al retro del telefono..."}
-          {status === 'writing' && "Scrittura in corso..."}
           {status === 'idle' && "Clicca il tasto e tocca la medaglietta per attivarla."}
           {status === 'success' && "Tag configurato con successo!"}
         </p>
@@ -165,10 +121,10 @@ export default function NFCPage() {
 
         <button 
           onClick={handleConnectNFC}
-          disabled={status === 'scanning' || status === 'writing'}
+          disabled={status === 'scanning'}
           className="btn-slurpy-primary w-full py-5 text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold disabled:opacity-50"
         >
-          {(status === 'scanning' || status === 'writing') ? "In ascolto..." : "Connetti Ora"}
+          {status === 'scanning' ? "In ascolto..." : "Connetti Ora"}
         </button>
       </div>
 
