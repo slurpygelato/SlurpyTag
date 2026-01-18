@@ -107,23 +107,21 @@ export default function ContactsPage() {
         const petIds = pets.map(p => p.id);
 
         // 2. Per ogni contatto, aggiorna/inserisci per ogni pet
-        // Usiamo UPSERT (ON CONFLICT) invece di DELETE+INSERT per evitare problemi con RLS
         for (const petId of petIds) {
           for (const owner of owners) {
             const emailLower = owner.email.toLowerCase().trim();
             const nameUpper = owner.name.toUpperCase();
             
-            // Prima prova a fare UPDATE di un record esistente con questa email e pet_id
-            const { data: existing } = await supabase
+            // Trova TUTTI i record con questa email e pet_id (potrebbero esserci duplicati)
+            const { data: existingRecords } = await supabase
               .from('family_members')
               .select('id')
               .eq('pet_id', petId)
               .eq('email', emailLower)
-              .limit(1)
-              .single();
+              .order('id', { ascending: false }); // Più recente per primo
 
-            if (existing) {
-              // Record esiste, fai UPDATE
+            if (existingRecords && existingRecords.length > 0) {
+              // Record esistono - aggiorna SOLO il più recente (il primo)
               const { error: updateError } = await supabase
                 .from('family_members')
                 .update({
@@ -131,11 +129,23 @@ export default function ContactsPage() {
                   phone: owner.phone,
                   email: emailLower
                 })
-                .eq('id', existing.id);
+                .eq('id', existingRecords[0].id); // Aggiorna solo il più recente
               
               if (updateError) throw updateError;
+
+              // Cancella tutti gli altri duplicati (dal secondo in poi)
+              if (existingRecords.length > 1) {
+                const idsToDelete = existingRecords.slice(1).map(r => r.id);
+                const { error: deleteError } = await supabase
+                  .from('family_members')
+                  .delete()
+                  .in('id', idsToDelete);
+                
+                // Non lanciare errore se delete fallisce (potrebbe essere RLS)
+                if (deleteError) console.warn('Delete duplicates warning:', deleteError);
+              }
             } else {
-              // Record non esiste, fai INSERT
+              // Nessun record esiste - fai INSERT
               const { error: insertError } = await supabase
                 .from('family_members')
                 .insert({
@@ -146,35 +156,6 @@ export default function ContactsPage() {
                 });
               
               if (insertError) throw insertError;
-            }
-          }
-        }
-
-        // 3. Cancella tutti i record duplicati rimasti (per questa email e pet_id, tiene solo il più recente)
-        for (const petId of petIds) {
-          for (const owner of owners) {
-            const emailLower = owner.email.toLowerCase().trim();
-            
-            // Trova tutti i record con questa email e pet_id, ordinati per id DESC
-            const { data: duplicates } = await supabase
-              .from('family_members')
-              .select('id')
-              .eq('pet_id', petId)
-              .eq('email', emailLower)
-              .order('id', { ascending: false });
-
-            if (duplicates && duplicates.length > 1) {
-              // Tiene solo il primo (più recente), cancella gli altri
-              const idsToDelete = duplicates.slice(1).map(d => d.id);
-              if (idsToDelete.length > 0) {
-                const { error: deleteError } = await supabase
-                  .from('family_members')
-                  .delete()
-                  .in('id', idsToDelete);
-                
-                // Non lanciare errore se delete fallisce (potrebbe essere RLS), almeno abbiamo aggiornato
-                if (deleteError) console.warn('Delete duplicates warning:', deleteError);
-              }
             }
           }
         }
