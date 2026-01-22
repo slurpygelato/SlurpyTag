@@ -8,6 +8,11 @@ export default function NFCPage() {
   const { id } = useParams();
   const [pet, setPet] = useState<any>(null);
   const [status, setStatus] = useState<"idle" | "scanning" | "success">("idle");
+  const [showIOSHelp, setShowIOSHelp] = useState(false);
+
+  // Rileva se è iOS
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const supportsWebNFC = typeof window !== 'undefined' && 'NDEFReader' in window;
 
   useEffect(() => {
     fetchPet();
@@ -20,8 +25,8 @@ export default function NFCPage() {
 
   const handleConnectNFC = async () => {
     // 1. Verifica supporto browser
-    if (!('NDEFReader' in window)) {
-      alert("Il tuo browser non supporta l'NFC. Usa Chrome su Android.");
+    if (!supportsWebNFC) {
+      setShowIOSHelp(true);
       return;
     }
 
@@ -75,11 +80,93 @@ export default function NFCPage() {
     }
   };
 
+  // Copia URL negli appunti
+  const copyProfileUrl = async () => {
+    const url = `${window.location.origin}/p/${pet.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("✅ Link copiato! Incollalo nell'app NFC Tools per scriverlo sul tag.");
+    } catch {
+      // Fallback per browser che non supportano clipboard API
+      prompt("Copia questo link e incollalo nell'app NFC Tools:", url);
+    }
+  };
+
   if (!pet) return <div className="p-10 text-center font-patrick uppercase text-black">Caricamento...</div>;
 
   return (
     <main className="min-h-screen p-4 pb-12 bg-[#FDF6EC] max-w-md mx-auto flex flex-col items-center text-black">
       
+      {/* Modal Aiuto iOS */}
+      {showIOSHelp && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowIOSHelp(false)}>
+          <div className="bg-[#FDF6EC] border-[3px] border-black rounded-[30px] p-6 max-w-sm w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <span className="text-5xl">🍎</span>
+              <h3 className="text-2xl font-bold uppercase font-patrick mt-2">
+                {isIOS ? "Usa un'app NFC" : "Usa Chrome su Android"}
+              </h3>
+            </div>
+            
+            <div className="space-y-3 font-patrick text-sm">
+              {isIOS ? (
+                <>
+                  <p className="text-gray-600">
+                    Safari non supporta la scrittura NFC, ma puoi usare l'app gratuita <strong>"NFC Tools"</strong>:
+                  </p>
+                  <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                    <li>Scarica <strong>NFC Tools</strong> dall'App Store</li>
+                    <li>Apri l'app e vai su <strong>"Scrivi"</strong></li>
+                    <li>Aggiungi un record <strong>"URL"</strong></li>
+                    <li>Incolla il link del profilo (copialo qui sotto)</li>
+                    <li>Avvicina il tag e scrivi!</li>
+                  </ol>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Una volta configurato, il tag funzionerà su tutti i dispositivi! 🎉
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-600">
+                    La scrittura NFC da browser funziona solo con <strong>Chrome su Android</strong>.
+                  </p>
+                  <p className="text-gray-600">
+                    In alternativa, puoi usare un'app NFC come <strong>"NFC Tools"</strong> (disponibile anche su Android).
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <button 
+                onClick={copyProfileUrl}
+                className="w-full py-4 bg-[#FF8CB8] border-[3px] border-black rounded-2xl font-patrick font-bold uppercase text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+              >
+                📋 Copia Link Profilo
+              </button>
+              
+              {isIOS && (
+                <a 
+                  href="https://apps.apple.com/app/nfc-tools/id1252962749"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-4 bg-white border-[3px] border-black rounded-2xl font-patrick font-bold uppercase text-lg text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+                >
+                  ⬇️ Scarica NFC Tools
+                </a>
+              )}
+              
+              <button 
+                onClick={() => setShowIOSHelp(false)}
+                className="w-full py-3 font-patrick uppercase text-gray-400 text-sm underline"
+              >
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="w-full flex items-center justify-between mb-8 pt-4">
         <button onClick={() => router.push('/dashboard')} className="w-12 h-12 bg-white border-[3px] border-black rounded-2xl flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -115,16 +202,33 @@ export default function NFCPage() {
 
         <p className="text-center font-patrick text-gray-500 text-sm uppercase px-4 leading-tight">
           {status === 'scanning' && "Avvicina la medaglietta al retro del telefono..."}
-          {status === 'idle' && "Clicca il tasto e tocca la medaglietta per attivarla."}
+          {status === 'idle' && (supportsWebNFC 
+            ? "Clicca il tasto e tocca la medaglietta per attivarla."
+            : isIOS 
+              ? "Su iPhone usa l'app NFC Tools per configurare il tag."
+              : "Usa Chrome su Android per configurare il tag."
+          )}
           {status === 'success' && "Tag configurato con successo!"}
         </p>
+
+        {/* Avviso per dispositivi non supportati */}
+        {!supportsWebNFC && status === 'idle' && (
+          <div className="w-full bg-yellow-50 border-2 border-dashed border-yellow-300 rounded-2xl p-4 text-center">
+            <p className="font-patrick text-sm text-yellow-700">
+              {isIOS ? "🍎 Safari non supporta NFC" : "⚠️ Browser non supportato"}
+            </p>
+            <p className="font-patrick text-xs text-yellow-600 mt-1">
+              Clicca sotto per le istruzioni alternative
+            </p>
+          </div>
+        )}
 
         <button 
           onClick={handleConnectNFC}
           disabled={status === 'scanning'}
           className="btn-slurpy-primary w-full py-5 text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold disabled:opacity-50"
         >
-          {status === 'scanning' ? "In ascolto..." : "Scrivi dati su NFC"}
+          {status === 'scanning' ? "In ascolto..." : supportsWebNFC ? "Scrivi dati su NFC" : "Come configurare"}
         </button>
       </div>
 
