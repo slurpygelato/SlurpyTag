@@ -185,7 +185,7 @@ export default function RegisterPage() {
           province: petData.province,
           region: petData.region,
           gender: petData.gender.toUpperCase(), 
-          birth_date: petData.birthDate,
+          birth_date: petData.birthDate || null,
           microchip: petData.microchip,
           microchip_id: petData.microchipNumber || null,
           likes: petData.likes,
