@@ -301,10 +301,15 @@ export default function RegisterPage() {
               </div>
               <div className="space-y-2 text-center">
                 <span className="text-sm font-bold text-gray-400 uppercase font-patrick block">Data di Nascita</span>
-                <div onClick={() => dateInputRef.current?.showPicker()} className="slurpy-input flex items-center justify-center cursor-pointer uppercase">
+                <div className="slurpy-input flex items-center justify-center cursor-pointer uppercase relative">
                   {formatDate(petData.birthDate)}
+                  <input 
+                    type="date" 
+                    ref={dateInputRef} 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                    onChange={(e) => setPetData({...petData, birthDate: e.target.value})} 
+                  />
                 </div>
-                <input type="date" ref={dateInputRef} className="sr-only" onChange={(e) => setPetData({...petData, birthDate: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <span className="text-sm font-bold text-gray-400 uppercase font-patrick text-center block">Microchip *</span>
