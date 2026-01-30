@@ -24,8 +24,8 @@ export default function InstallPWA() {
     const dismissed = localStorage.getItem('pwa-banner-dismissed');
     if (dismissed) {
       const dismissedTime = parseInt(dismissed);
-      // Mostra di nuovo dopo 7 giorni
-      if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
+      // Mostra di nuovo dopo 24 ore
+      if (Date.now() - dismissedTime < 24 * 60 * 60 * 1000) {
         return;
       }
     }
