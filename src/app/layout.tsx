@@ -2,6 +2,7 @@ import { Amatic_SC, Patrick_Hand } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 import "./globals.css";
 import PWARegister from '@/components/PWARegister';
+import InstallPWA from '@/components/InstallPWA';
 
 // Configurazione Amatic SC per i titoli
 const amatic = Amatic_SC({
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-patrick antialiased">
         <PWARegister />
         {children}
+        <InstallPWA />
       </body>
     </html>
   );
