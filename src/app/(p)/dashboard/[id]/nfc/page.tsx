@@ -50,8 +50,7 @@ export default function NFCPage() {
       const { error: dbError } = await supabase
         .from('pets')
         .update({ 
-          is_connected: true,
-          NFC_id: pet.id
+          is_connected: true
         })
         .eq('id', id);
 
