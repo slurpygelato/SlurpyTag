@@ -9,6 +9,7 @@ export default function NFCPage() {
   const [pet, setPet] = useState<any>(null);
   const [status, setStatus] = useState<"idle" | "scanning" | "success">("idle");
   const [showIOSHelp, setShowIOSHelp] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Rileva se è iOS
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -30,18 +31,12 @@ export default function NFCPage() {
       return;
     }
 
-    // 2. Pop-up di conferma PRIMA di iniziare
-    const conferma = window.confirm(
-      `⚠️ ATTENZIONE\n\n` +
-      `Una volta scritto, il contenuto del tag NFC non sarà più modificabile.\n\n` +
-      `Assicurati che i dati del profilo di ${pet.name.toUpperCase()} siano corretti prima di procedere.\n\n` +
-      `Usa un tag NUOVO o VUOTO.\n\n` +
-      `Vuoi procedere con la configurazione?`
-    );
-    
-    if (!conferma) {
-      return; // L'utente ha annullato
-    }
+    // 2. Mostra modale di conferma
+    setShowConfirmModal(true);
+  };
+
+  const proceedWithNFCWrite = async () => {
+    setShowConfirmModal(false);
 
     // 3. Ora procedi con la scrittura NFC
     try {
@@ -164,6 +159,78 @@ export default function NFCPage() {
                 className="w-full py-3 font-patrick uppercase text-gray-400 text-sm underline"
               >
                 Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Conferma Scrittura NFC */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowConfirmModal(false)}>
+          <div className="bg-[#FDF6EC] border-[3px] border-black rounded-[30px] p-6 max-w-sm w-full shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <span className="text-5xl">⚠️</span>
+              <h3 className="text-2xl font-bold uppercase font-patrick mt-2">
+                Attenzione
+              </h3>
+            </div>
+            
+            <div className="space-y-3 font-patrick text-sm">
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3">
+                <p className="text-red-700 font-bold text-center">
+                  ⛔ Il tag deve essere VUOTO
+                </p>
+                <p className="text-red-600 text-xs text-center mt-1">
+                  Una volta scritto, il contenuto non sarà più modificabile
+                </p>
+              </div>
+
+              <p className="text-gray-600 text-center">
+                Assicurati che i dati del profilo di <strong>{pet?.name?.toUpperCase()}</strong> siano corretti prima di procedere.
+              </p>
+
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
+                <p className="text-blue-700 text-xs text-center">
+                  💡 <strong>Hai già dei dati sul tag?</strong>
+                </p>
+                <p className="text-blue-600 text-xs text-center mt-1">
+                  Usa l'app <strong>NFC Tools</strong> per formattarlo e riportarlo allo stato di fabbrica
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <a 
+                    href="https://apps.apple.com/app/nfc-tools/id1252962749"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 bg-white border border-blue-300 rounded-lg text-xs text-center text-blue-600 font-bold"
+                  >
+                    🍎 iOS
+                  </a>
+                  <a 
+                    href="https://play.google.com/store/apps/details?id=com.wakdev.wdnfc"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 bg-white border border-blue-300 rounded-lg text-xs text-center text-blue-600 font-bold"
+                  >
+                    🤖 Android
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <button 
+                onClick={proceedWithNFCWrite}
+                className="w-full py-4 bg-[#FF8CB8] border-[3px] border-black rounded-2xl font-patrick font-bold uppercase text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+              >
+                ✅ Ho capito, procedi
+              </button>
+              
+              <button 
+                onClick={() => setShowConfirmModal(false)}
+                className="w-full py-3 font-patrick uppercase text-gray-400 text-sm underline"
+              >
+                Annulla
               </button>
             </div>
           </div>
