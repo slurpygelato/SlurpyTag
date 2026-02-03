@@ -37,13 +37,16 @@ export default function NFCPage() {
 
   const proceedWithNFCWrite = async () => {
     setShowConfirmModal(false);
+    setStatus("scanning");
 
-    // 3. Ora procedi con la scrittura NFC
     try {
-      setStatus("scanning");
+      // @ts-ignore
+      const ndef = new NDEFReader();
       
-      // Aggiornamento Database PRIMA della scrittura
-      // (così se Android reindirizza, il DB è già aggiornato)
+      // L'URL che verrà scritto sulla medaglietta (con parametro di conferma)
+      const publicUrl = `${window.location.origin}/p/${pet.id}?configured=true`;
+
+      // Prima aggiorna il database
       const { error: dbError } = await supabase
         .from('pets')
         .update({ 
@@ -54,26 +57,39 @@ export default function NFCPage() {
 
       if (dbError) throw dbError;
 
-      // @ts-ignore
-      const ndef = new NDEFReader();
+      // Avvia la scansione - rimane in ascolto finché non rileva un tag
+      await ndef.scan();
       
-      // L'URL che verrà scritto sulla medaglietta (con parametro di conferma)
-      const publicUrl = `${window.location.origin}/p/${pet.id}?configured=true`;
+      // Quando rileva un tag, scrivi
+      ndef.onreading = async () => {
+        try {
+          await ndef.write({
+            records: [{ recordType: "url", data: publicUrl }]
+          });
+          
+          // Scrittura completata con successo
+          setStatus("success");
+          alert(`✅ Tag configurato con successo per ${pet.name.toUpperCase()}!`);
+          router.replace('/dashboard');
+        } catch (writeError) {
+          console.log("Errore scrittura o Android ha intercettato:", writeError);
+          // Android potrebbe aver intercettato e aperto l'URL
+          // L'utente vedrà la conferma sulla pagina del profilo
+        }
+      };
 
-      // Scrittura diretta
-      await ndef.write({
-        records: [{ recordType: "url", data: publicUrl }]
-      });
-
-      // Se arriviamo qui, la scrittura è completata E Android non ha intercettato
-      setStatus("success");
-      alert(`✅ Tag registrato con successo per ${pet.name.toUpperCase()}!`);
-      router.replace('/dashboard');
+      ndef.onreadingerror = () => {
+        alert("❌ Errore lettura tag. Riprova avvicinando il tag.");
+        setStatus("idle");
+      };
 
     } catch (error: any) {
-      // Android ha intercettato il tag e sta aprendo l'URL
-      // L'utente vedrà la conferma sulla pagina del profilo
-      console.log("NFC: scrittura completata, Android sta aprendo l'URL");
+      console.error("Errore NFC:", error);
+      if (error.name === 'NotAllowedError') {
+        alert("❌ Permesso NFC negato. Abilita NFC nelle impostazioni.");
+      } else {
+        alert("❌ Errore: " + error.message);
+      }
       setStatus("idle");
     }
   };
@@ -293,13 +309,21 @@ export default function NFCPage() {
           </div>
         )}
 
-        <button 
-          onClick={handleConnectNFC}
-          disabled={status === 'scanning'}
-          className="btn-slurpy-primary w-full py-5 text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold disabled:opacity-50"
-        >
-          {status === 'scanning' ? "In ascolto..." : supportsWebNFC ? "Scrivi dati su NFC" : "Come configurare"}
-        </button>
+        {status === 'scanning' ? (
+          <button 
+            onClick={() => setStatus('idle')}
+            className="w-full py-5 bg-gray-200 border-[3px] border-black rounded-2xl text-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold font-patrick"
+          >
+            ❌ Annulla scansione
+          </button>
+        ) : (
+          <button 
+            onClick={handleConnectNFC}
+            className="btn-slurpy-primary w-full py-5 text-2xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all uppercase italic font-bold"
+          >
+            {supportsWebNFC ? "Scrivi dati su NFC" : "Come configurare"}
+          </button>
+        )}
       </div>
 
       <button 
