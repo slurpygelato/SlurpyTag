@@ -1,13 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function PublicPetProfile() {
   const { id } = useParams();
+  const searchParams = useSearchParams();
   const [pet, setPet] = useState<any>(null);
   const [contacts, setContacts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showConfiguredBanner, setShowConfiguredBanner] = useState(false);
+
+  // Controlla se è appena stato configurato il tag
+  const justConfigured = searchParams.get('configured') === 'true';
+
+  useEffect(() => {
+    if (justConfigured) {
+      setShowConfiguredBanner(true);
+      // Nascondi il banner dopo 5 secondi
+      setTimeout(() => setShowConfiguredBanner(false), 5000);
+    }
+  }, [justConfigured]);
 
   useEffect(() => {
     const fetchPetAndLogScan = async () => {
@@ -32,14 +45,16 @@ export default function PublicPetProfile() {
           setContacts(familyData);
         }
         
-        // 3. Registra il Log della scansione
-        registerScan(data.id);
+        // 3. Registra il Log della scansione (solo se NON è una configurazione)
+        if (!justConfigured) {
+          registerScan(data.id);
+        }
       }
       setLoading(false);
     };
 
     if (id) fetchPetAndLogScan();
-  }, [id]);
+  }, [id, justConfigured]);
 
   // FUNZIONE PER REGISTRARE LA SCANSIONE
   const registerScan = async (petId: string) => {
@@ -90,6 +105,21 @@ export default function PublicPetProfile() {
 
   return (
     <main className="min-h-screen bg-[#FDF6EC] p-6 pb-12 flex flex-col items-center text-black">
+      
+      {/* Banner conferma configurazione NFC */}
+      {showConfiguredBanner && (
+        <div className="w-full max-w-md mb-4 animate-in slide-in-from-top duration-500">
+          <div className="bg-green-500 border-[3px] border-black rounded-2xl p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-center">
+            <p className="font-patrick text-white text-xl font-bold uppercase">
+              ✅ Tag NFC configurato con successo!
+            </p>
+            <p className="font-patrick text-white/80 text-sm mt-1">
+              La medaglietta di {pet?.name} è pronta all'uso
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md bg-white border-[3px] border-black rounded-[40px] p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-center">
         
         <h1 className="slurpy-logo text-5xl mb-2 uppercase">Ciao! Sono</h1>

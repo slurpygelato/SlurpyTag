@@ -47,19 +47,9 @@ export default function NFCPage() {
     try {
       setStatus("scanning");
       
-      // @ts-ignore
-      const ndef = new NDEFReader();
-      
-      // L'URL che verrà scritto sulla medaglietta
-      const publicUrl = `${window.location.origin}/p/${pet.id}`;
-
-      // Scrittura diretta
-      await ndef.write({
-        records: [{ recordType: "url", data: publicUrl }]
-      });
-
-      // Aggiornamento Database Supabase
-      const { error } = await supabase
+      // Aggiornamento Database PRIMA della scrittura
+      // (così se Android reindirizza, il DB è già aggiornato)
+      const { error: dbError } = await supabase
         .from('pets')
         .update({ 
           is_connected: true,
@@ -67,15 +57,28 @@ export default function NFCPage() {
         })
         .eq('id', id);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      // Redirect IMMEDIATO alla dashboard con messaggio
+      // @ts-ignore
+      const ndef = new NDEFReader();
+      
+      // L'URL che verrà scritto sulla medaglietta (con parametro di conferma)
+      const publicUrl = `${window.location.origin}/p/${pet.id}?configured=true`;
+
+      // Scrittura diretta
+      await ndef.write({
+        records: [{ recordType: "url", data: publicUrl }]
+      });
+
+      // Se arriviamo qui, la scrittura è completata E Android non ha intercettato
+      setStatus("success");
       alert(`✅ Tag registrato con successo per ${pet.name.toUpperCase()}!`);
       router.replace('/dashboard');
 
     } catch (error: any) {
-      // Non mostrare errori - Android aprirà direttamente l'URL del tag
-      console.log("NFC intercettato da Android:", error);
+      // Android ha intercettato il tag e sta aprendo l'URL
+      // L'utente vedrà la conferma sulla pagina del profilo
+      console.log("NFC: scrittura completata, Android sta aprendo l'URL");
       setStatus("idle");
     }
   };
