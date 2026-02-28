@@ -18,7 +18,9 @@ interface PetData {
   province: string;
   region: string;
   gender: string;
-  birthDate: string;
+  birthDay: string;
+  birthMonth: string;
+  birthYear: string;
   microchip: string;
   microchipNumber: string;
   likes: string;
@@ -26,18 +28,39 @@ interface PetData {
   healthNotes: string;
 }
 
+// Genera array di giorni (1-31)
+const days = Array.from({ length: 31 }, (_, i) => i + 1);
+// Mesi in italiano
+const months = [
+  { value: '01', label: 'Gennaio' },
+  { value: '02', label: 'Febbraio' },
+  { value: '03', label: 'Marzo' },
+  { value: '04', label: 'Aprile' },
+  { value: '05', label: 'Maggio' },
+  { value: '06', label: 'Giugno' },
+  { value: '07', label: 'Luglio' },
+  { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Settembre' },
+  { value: '10', label: 'Ottobre' },
+  { value: '11', label: 'Novembre' },
+  { value: '12', label: 'Dicembre' },
+];
+// Anni (ultimi 25 anni)
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 25 }, (_, i) => currentYear - i);
+
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(0); 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
   
   const [owners, setOwners] = useState<Owner[]>([{ name: "", phone: "", email: "" }]);
   const [petData, setPetData] = useState<PetData>({
     name: "", nickname: "", city: "", province: "", region: "",
-    gender: "", birthDate: "", microchip: "", microchipNumber: "",
+    gender: "", birthDay: "", birthMonth: "", birthYear: "",
+    microchip: "", microchipNumber: "",
     likes: "", fears: "", healthNotes: ""
   });
   const [photos, setPhotos] = useState<{preview: string, file: File}[]>([]);
@@ -59,10 +82,22 @@ export default function RegisterPage() {
     checkUser();
   }, [router]);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "SELEZIONA DATA";
-    const [year, month, day] = dateStr.split("-");
-    return `${day}/${month}/${year}`;
+  // Costruisce la data in formato YYYY-MM-DD per il database
+  const getBirthDate = () => {
+    if (petData.birthDay && petData.birthMonth && petData.birthYear) {
+      const day = petData.birthDay.padStart(2, '0');
+      return `${petData.birthYear}-${petData.birthMonth}-${day}`;
+    }
+    return null;
+  };
+
+  // Formatta la data per la visualizzazione
+  const formatDateDisplay = () => {
+    if (petData.birthDay && petData.birthMonth && petData.birthYear) {
+      const monthName = months.find(m => m.value === petData.birthMonth)?.label || '';
+      return `${petData.birthDay} ${monthName} ${petData.birthYear}`;
+    }
+    return "Non specificata";
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,7 +220,7 @@ export default function RegisterPage() {
           province: petData.province,
           region: petData.region,
           gender: petData.gender.toUpperCase(), 
-          birth_date: petData.birthDate || null,
+          birth_date: getBirthDate(),
           microchip: petData.microchip,
           microchip_id: petData.microchipNumber || null,
           likes: petData.likes,
@@ -301,14 +336,37 @@ export default function RegisterPage() {
               </div>
               <div className="space-y-2 text-center">
                 <span className="text-sm font-bold text-gray-400 uppercase font-patrick block">Data di Nascita</span>
-                <div className="slurpy-input flex items-center justify-center cursor-pointer uppercase relative">
-                  {formatDate(petData.birthDate)}
-                  <input 
-                    type="date" 
-                    ref={dateInputRef} 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                    onChange={(e) => setPetData({...petData, birthDate: e.target.value})} 
-                  />
+                <div className="grid grid-cols-3 gap-2">
+                  <select 
+                    value={petData.birthDay} 
+                    onChange={(e) => setPetData({...petData, birthDay: e.target.value})}
+                    className="slurpy-input text-center uppercase !px-2"
+                  >
+                    <option value="">GG</option>
+                    {days.map(d => (
+                      <option key={d} value={String(d)}>{d}</option>
+                    ))}
+                  </select>
+                  <select 
+                    value={petData.birthMonth} 
+                    onChange={(e) => setPetData({...petData, birthMonth: e.target.value})}
+                    className="slurpy-input text-center uppercase !px-1 !text-sm"
+                  >
+                    <option value="">MESE</option>
+                    {months.map(m => (
+                      <option key={m.value} value={m.value}>{m.label.substring(0, 3).toUpperCase()}</option>
+                    ))}
+                  </select>
+                  <select 
+                    value={petData.birthYear} 
+                    onChange={(e) => setPetData({...petData, birthYear: e.target.value})}
+                    className="slurpy-input text-center uppercase !px-2"
+                  >
+                    <option value="">ANNO</option>
+                    {years.map(y => (
+                      <option key={y} value={String(y)}>{y}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="space-y-2">
@@ -392,7 +450,7 @@ export default function RegisterPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-1 text-lg font-patrick uppercase text-left border-t-2 border-dashed border-black/10 pt-4">
                   <p>📍 {petData.city} ({petData.province})</p>
-                  <p>🎂 {formatDate(petData.birthDate)}</p>
+                  <p>🎂 {formatDateDisplay()}</p>
                   <p>⚧️ {petData.gender} | 🆔 CHIP: {petData.microchip}</p>
                   <p>📞 {owners[0].phone}</p>
                 </div>

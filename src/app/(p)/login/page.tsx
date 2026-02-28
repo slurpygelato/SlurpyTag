@@ -16,6 +16,7 @@ function AuthForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -35,29 +36,43 @@ function AuthForm() {
   }, [mode]);
 
   const handleGoogleLogin = async () => {
-    const intent = isRegistering ? 'register' : 'login';
-    
-    // Salva l'intento in cookie E localStorage come backup
-    if (typeof window !== 'undefined') {
-      document.cookie = `auth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
-      localStorage.setItem('auth_intent', intent);
-    }
-    
-    const redirectUrl = 'https://app.slurpygelato.it/auth/callback';
-    
-    console.log('[Google OAuth] Redirect URL:', redirectUrl);
-    console.log('[Google OAuth] Intent:', intent);
-    
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-      },
-    });
-    
-    if (error) {
-      console.error('[Google OAuth] Error:', error);
-      setMessage(error.message);
+    try {
+      setGoogleLoading(true);
+      setMessage("");
+      
+      const intent = isRegistering ? 'register' : 'login';
+      
+      // Salva l'intento in cookie E localStorage come backup
+      if (typeof window !== 'undefined') {
+        document.cookie = `auth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
+        localStorage.setItem('auth_intent', intent);
+      }
+      
+      const redirectUrl = 'https://app.slurpygelato.it/auth/callback';
+      
+      console.log('[Google OAuth] Starting...');
+      console.log('[Google OAuth] Redirect URL:', redirectUrl);
+      console.log('[Google OAuth] Intent:', intent);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+      
+      console.log('[Google OAuth] Response:', { data, error });
+      
+      if (error) {
+        console.error('[Google OAuth] Error:', error);
+        setMessage(error.message);
+        setGoogleLoading(false);
+      }
+      // Se non c'è errore, il browser verrà reindirizzato a Google
+    } catch (err: any) {
+      console.error('[Google OAuth] Caught error:', err);
+      setMessage(err.message || 'Errore durante il login con Google');
+      setGoogleLoading(false);
     }
   };
 
@@ -188,10 +203,20 @@ function AuthForm() {
           <div className="mt-6">
             <button 
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center gap-3 border-2 border-gray-100 p-3 rounded-2xl hover:bg-gray-50 transition-all font-patrick uppercase text-lg shadow-sm"
+              disabled={googleLoading}
+              className="w-full flex items-center justify-center gap-3 border-2 border-gray-100 p-3 rounded-2xl hover:bg-gray-50 transition-all font-patrick uppercase text-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <img src="https://authjs.dev/img/providers/google.svg" className="w-5 h-5" alt="Google" />
-              {isRegistering ? "Registrati con Google" : "Accedi con Google"}
+              {googleLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-gray-300 border-t-[#FF8CB8] rounded-full animate-spin"></div>
+                  Connessione...
+                </>
+              ) : (
+                <>
+                  <img src="https://authjs.dev/img/providers/google.svg" className="w-5 h-5" alt="Google" />
+                  {isRegistering ? "Registrati con Google" : "Accedi con Google"}
+                </>
+              )}
             </button>
           </div>
 
