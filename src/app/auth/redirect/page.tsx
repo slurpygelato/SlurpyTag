@@ -94,13 +94,3 @@ export default function AuthRedirectPage() {
     </main>
   );
 }
-
-  return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#FDF6EC]">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF8CB8] border-t-transparent mx-auto mb-6"></div>
-        <p className="font-patrick text-2xl uppercase text-gray-600">{status}</p>
-      </div>
-    </main>
-  );
-}
