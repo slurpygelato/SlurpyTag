@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 // Helper per leggere un cookie
@@ -19,16 +19,19 @@ function deleteCookie(name: string) {
   }
 }
 
-function RedirectHandler() {
+export default function AuthRedirectPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [status, setStatus] = useState("Autenticazione in corso...");
 
   useEffect(() => {
     const handleRedirect = async () => {
       try {
+        console.log('[AuthRedirect] Starting...');
+        
         // Verifica se l'utente è autenticato
         const { data: { session } } = await supabase.auth.getSession();
+        
+        console.log('[AuthRedirect] Session:', session ? 'found' : 'not found');
         
         if (!session) {
           setStatus("Sessione non trovata. Reindirizzamento...");
@@ -36,13 +39,11 @@ function RedirectHandler() {
           return;
         }
 
-        // Leggi l'intento: prima da URL, poi da cookie, poi da localStorage
-        const urlIntent = searchParams.get('intent');
+        // Leggi l'intento da cookie o localStorage
         const cookieIntent = getCookie('auth_intent');
         const localIntent = localStorage.getItem('auth_intent');
-        const authIntent = urlIntent || cookieIntent || localIntent;
+        const authIntent = cookieIntent || localIntent;
         
-        console.log('[AuthRedirect] URL intent:', urlIntent);
         console.log('[AuthRedirect] Cookie intent:', cookieIntent);
         console.log('[AuthRedirect] Local intent:', localIntent);
         console.log('[AuthRedirect] Final intent:', authIntent);
@@ -65,6 +66,8 @@ function RedirectHandler() {
           .eq('owner_id', session.user.id)
           .limit(1);
 
+        console.log('[AuthRedirect] Pets found:', petsData?.length || 0);
+
         if (petsData && petsData.length > 0) {
           setStatus("Bentornato! Reindirizzamento alla dashboard...");
           router.push("/dashboard");
@@ -73,34 +76,21 @@ function RedirectHandler() {
           router.push("/register");
         }
       } catch (error) {
-        console.error("Errore durante il redirect:", error);
+        console.error("[AuthRedirect] Error:", error);
         setStatus("Errore. Reindirizzamento...");
         router.push("/login?message=Errore durante l'autenticazione");
       }
     };
 
     handleRedirect();
-  }, [router, searchParams]);
+  }, [router]);
 
-  return (
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF8CB8] border-t-transparent mx-auto mb-6"></div>
-      <p className="font-patrick text-2xl uppercase text-gray-600">{status}</p>
-    </div>
-  );
-}
-
-export default function AuthRedirectPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#FDF6EC]">
-      <Suspense fallback={
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF8CB8] border-t-transparent mx-auto mb-6"></div>
-          <p className="font-patrick text-2xl uppercase text-gray-600">Caricamento...</p>
-        </div>
-      }>
-        <RedirectHandler />
-      </Suspense>
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF8CB8] border-t-transparent mx-auto mb-6"></div>
+        <p className="font-patrick text-2xl uppercase text-gray-600">{status}</p>
+      </div>
     </main>
   );
 }

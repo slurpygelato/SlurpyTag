@@ -43,13 +43,7 @@ function AuthForm() {
       localStorage.setItem('auth_intent', intent);
     }
     
-    // Usa sempre la variabile d'ambiente se disponibile
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-      || (typeof window !== 'undefined' ? window.location.origin : 'https://app.slurpygelato.it');
-    
-    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    // IMPORTANTE: passa l'intent anche nella URL come fallback
-    const redirectUrl = `${cleanBaseUrl}/auth/callback?intent=${intent}`;
+    const redirectUrl = 'https://app.slurpygelato.it/auth/callback';
     
     console.log('[Google OAuth] Redirect URL:', redirectUrl);
     console.log('[Google OAuth] Intent:', intent);
@@ -58,10 +52,6 @@ function AuthForm() {
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
       },
     });
     

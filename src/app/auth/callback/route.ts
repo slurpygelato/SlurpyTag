@@ -5,23 +5,15 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const intent = searchParams.get('intent') // Leggi l'intent dalla URL
   const error_description = searchParams.get('error_description')
   const error_code = searchParams.get('error')
   
-  // Debug: log tutti i parametri ricevuti
   console.log('[Callback] Full URL:', request.url);
   console.log('[Callback] Code:', code ? 'present' : 'missing');
-  console.log('[Callback] Intent:', intent);
   console.log('[Callback] Error:', error_code || error_description || 'none');
-  console.log('[Callback] Origin:', origin);
   
-  // Determina l'URL base sicuro (non localhost in produzione)
-  const safeOrigin = origin.includes('localhost') 
-    ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://app.slurpygelato.it')
-    : origin
+  const safeOrigin = 'https://app.slurpygelato.it'
 
-  // Se c'è un errore nella query string, reindirizza al login
   if (error_description || error_code) {
     const errorMsg = error_description || error_code || 'Authentication error'
     console.error('[Callback] Auth error:', errorMsg);
@@ -52,24 +44,18 @@ export async function GET(request: Request) {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       
       if (error) {
-        console.error('Auth callback error:', error)
+        console.error('[Callback] Exchange error:', error)
         return NextResponse.redirect(`${safeOrigin}/login?message=${encodeURIComponent(error.message)}`)
       }
       
-      // Sessione creata con successo - passa l'intent alla pagina redirect
-      const redirectUrl = intent 
-        ? `${safeOrigin}/auth/redirect?intent=${intent}`
-        : `${safeOrigin}/auth/redirect`;
-      
-      console.log('[Callback] Redirecting to:', redirectUrl);
-      return NextResponse.redirect(redirectUrl)
+      console.log('[Callback] Success! Redirecting to /auth/redirect');
+      return NextResponse.redirect(`${safeOrigin}/auth/redirect`)
       
     } catch (err: any) {
-      console.error('Callback route error:', err)
+      console.error('[Callback] Route error:', err)
       return NextResponse.redirect(`${safeOrigin}/login?message=${encodeURIComponent(err.message || 'Authentication failed')}`)
     }
   }
 
-  // Se non c'è codice, torna alla pagina di login
   return NextResponse.redirect(`${safeOrigin}/login?message=No authentication code provided`)
 }
