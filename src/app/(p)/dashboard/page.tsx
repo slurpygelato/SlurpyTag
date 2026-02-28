@@ -40,14 +40,8 @@ export default function DashboardPage() {
     <main className="min-h-screen p-6 max-w-md mx-auto flex flex-col bg-[#FDF6EC]">
       <h1 className="slurpy-logo text-5xl text-center mb-10 mt-4">SLURPY TAG</h1>
 
-      {/* Pulsanti Header - AGGIORNATI CON I PERCORSI CORRETTI */}
-      <div className="grid grid-cols-3 gap-4 mb-12 px-4">
-        {/* LOG: Punta alla pagina delle scansioni */}
-        <Link href="/dashboard/logs" className="flex flex-col items-center gap-2 hover:scale-105 transition-transform">
-          <div className="w-16 h-16 bg-white border-[3px] border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center text-2xl">📋</div>
-          <span className="font-patrick text-xs font-bold uppercase text-black">Log</span>
-        </Link>
-        
+      {/* Pulsanti Header */}
+      <div className="grid grid-cols-2 gap-6 mb-12 px-8">
         {/* CONTATTI: Punta alla gestione dei contatti proprietario */}
         <Link href="/dashboard/profile" className="flex flex-col items-center gap-2 hover:scale-105 transition-transform">
           <div className="w-16 h-16 bg-white border-[3px] border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center text-2xl">📞</div>
