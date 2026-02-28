@@ -19,51 +19,13 @@ function AuthForm() {
   const [message, setMessage] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Controlla se siamo tornati da un redirect OAuth
+  // Controlla messaggio di errore dalla query string (redirect da callback)
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      // Controlla se c'è un hash con il codice (OAuth callback)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const error = hashParams.get('error');
-      
-      if (error) {
-        setMessage(`Errore autenticazione: ${error}`);
-        return;
-      }
-      
-      if (accessToken) {
-        // Siamo tornati da OAuth, verifica la sessione
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          // Leggi l'intento salvato
-          const authIntent = localStorage.getItem('auth_intent');
-          localStorage.removeItem('auth_intent');
-          
-          if (authIntent === 'register') {
-            router.push("/register");
-            return;
-          }
-          
-          // Controlla se ha cani
-          const { data: petsData } = await supabase
-            .from('pets')
-            .select('id')
-            .eq('owner_id', session.user.id)
-            .limit(1);
-          
-          if (petsData && petsData.length > 0) {
-            router.push("/dashboard");
-          } else {
-            router.push("/register");
-          }
-        }
-      }
-    };
-    
-    handleAuthCallback();
-  }, [router]);
+    const messageParam = searchParams.get("message");
+    if (messageParam) {
+      setMessage(messageParam);
+    }
+  }, [searchParams]);
 
   // Aggiorna isRegistering quando cambia il mode
   useEffect(() => {
@@ -83,7 +45,8 @@ function AuthForm() {
       || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
     
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    const redirectUrl = `${cleanBaseUrl}/login`;
+    // IMPORTANTE: redirect a /auth/callback per PKCE flow
+    const redirectUrl = `${cleanBaseUrl}/auth/callback`;
     
     console.log('[Google OAuth] Redirect URL:', redirectUrl);
     console.log('[Google OAuth] Intent:', isRegistering ? 'register' : 'login');
@@ -117,9 +80,11 @@ function AuthForm() {
         return;
       }
       
-      const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/login`
-        : 'https://slurpy-tag.vercel.app/login';
+      // IMPORTANTE: redirect a /auth/callback per PKCE flow
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
+        || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
+      const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+      const redirectUrl = `${cleanBaseUrl}/auth/callback`;
       
       // Salva l'intento per la conferma email
       if (typeof window !== 'undefined') {
