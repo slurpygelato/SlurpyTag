@@ -5,15 +5,16 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const intent = searchParams.get('intent') // Leggi l'intent dalla URL
   const error_description = searchParams.get('error_description')
   const error_code = searchParams.get('error')
   
   // Debug: log tutti i parametri ricevuti
   console.log('[Callback] Full URL:', request.url);
   console.log('[Callback] Code:', code ? 'present' : 'missing');
+  console.log('[Callback] Intent:', intent);
   console.log('[Callback] Error:', error_code || error_description || 'none');
   console.log('[Callback] Origin:', origin);
-  console.log('[Callback] All params:', Object.fromEntries(searchParams.entries()));
   
   // Determina l'URL base sicuro (non localhost in produzione)
   const safeOrigin = origin.includes('localhost') 
@@ -55,9 +56,13 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${safeOrigin}/login?message=${encodeURIComponent(error.message)}`)
       }
       
-      // Sessione creata con successo - reindirizza alla pagina client che gestisce il routing
-      // La pagina /auth/redirect leggerà l'intento da localStorage e reindirizzerà di conseguenza
-      return NextResponse.redirect(`${safeOrigin}/auth/redirect`)
+      // Sessione creata con successo - passa l'intent alla pagina redirect
+      const redirectUrl = intent 
+        ? `${safeOrigin}/auth/redirect?intent=${intent}`
+        : `${safeOrigin}/auth/redirect`;
+      
+      console.log('[Callback] Redirecting to:', redirectUrl);
+      return NextResponse.redirect(redirectUrl)
       
     } catch (err: any) {
       console.error('Callback route error:', err)

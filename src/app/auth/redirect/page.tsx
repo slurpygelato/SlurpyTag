@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 // Helper per leggere un cookie
@@ -19,8 +19,9 @@ function deleteCookie(name: string) {
   }
 }
 
-export default function AuthRedirectPage() {
+function RedirectHandler() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState("Autenticazione in corso...");
 
   useEffect(() => {
@@ -35,10 +36,16 @@ export default function AuthRedirectPage() {
           return;
         }
 
-        // Leggi l'intento da COOKIE (priorità) o localStorage (backup)
-        const authIntent = getCookie('auth_intent') || localStorage.getItem('auth_intent');
+        // Leggi l'intento: prima da URL, poi da cookie, poi da localStorage
+        const urlIntent = searchParams.get('intent');
+        const cookieIntent = getCookie('auth_intent');
+        const localIntent = localStorage.getItem('auth_intent');
+        const authIntent = urlIntent || cookieIntent || localIntent;
         
-        console.log('[AuthRedirect] Intent found:', authIntent);
+        console.log('[AuthRedirect] URL intent:', urlIntent);
+        console.log('[AuthRedirect] Cookie intent:', cookieIntent);
+        console.log('[AuthRedirect] Local intent:', localIntent);
+        console.log('[AuthRedirect] Final intent:', authIntent);
         
         // Rimuovi l'intento dopo averlo letto
         deleteCookie('auth_intent');
@@ -73,7 +80,30 @@ export default function AuthRedirectPage() {
     };
 
     handleRedirect();
-  }, [router]);
+  }, [router, searchParams]);
+
+  return (
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF8CB8] border-t-transparent mx-auto mb-6"></div>
+      <p className="font-patrick text-2xl uppercase text-gray-600">{status}</p>
+    </div>
+  );
+}
+
+export default function AuthRedirectPage() {
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center bg-[#FDF6EC]">
+      <Suspense fallback={
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#FF8CB8] border-t-transparent mx-auto mb-6"></div>
+          <p className="font-patrick text-2xl uppercase text-gray-600">Caricamento...</p>
+        </div>
+      }>
+        <RedirectHandler />
+      </Suspense>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#FDF6EC]">

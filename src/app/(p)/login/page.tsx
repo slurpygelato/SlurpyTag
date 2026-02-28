@@ -35,11 +35,12 @@ function AuthForm() {
   }, [mode]);
 
   const handleGoogleLogin = async () => {
-    // Salva l'intento in un COOKIE (localStorage si perde con redirect cross-domain)
+    const intent = isRegistering ? 'register' : 'login';
+    
+    // Salva l'intento in cookie E localStorage come backup
     if (typeof window !== 'undefined') {
-      const intent = isRegistering ? 'register' : 'login';
       document.cookie = `auth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
-      localStorage.setItem('auth_intent', intent); // backup
+      localStorage.setItem('auth_intent', intent);
     }
     
     // Usa sempre la variabile d'ambiente se disponibile
@@ -47,11 +48,11 @@ function AuthForm() {
       || (typeof window !== 'undefined' ? window.location.origin : 'https://app.slurpygelato.it');
     
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-    // IMPORTANTE: redirect a /auth/callback per PKCE flow
-    const redirectUrl = `${cleanBaseUrl}/auth/callback`;
+    // IMPORTANTE: passa l'intent anche nella URL come fallback
+    const redirectUrl = `${cleanBaseUrl}/auth/callback?intent=${intent}`;
     
     console.log('[Google OAuth] Redirect URL:', redirectUrl);
-    console.log('[Google OAuth] Intent:', isRegistering ? 'register' : 'login');
+    console.log('[Google OAuth] Intent:', intent);
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
