@@ -35,9 +35,11 @@ function AuthForm() {
   }, [mode]);
 
   const handleGoogleLogin = async () => {
-    // Salva l'intento dell'utente in localStorage PRIMA del redirect a Google
+    // Salva l'intento in un COOKIE (localStorage si perde con redirect cross-domain)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_intent', isRegistering ? 'register' : 'login');
+      const intent = isRegistering ? 'register' : 'login';
+      document.cookie = `auth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
+      localStorage.setItem('auth_intent', intent); // backup
     }
     
     // Usa sempre la variabile d'ambiente se disponibile

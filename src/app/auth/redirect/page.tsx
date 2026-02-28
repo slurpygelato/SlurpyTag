@@ -3,6 +3,22 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+// Helper per leggere un cookie
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+// Helper per cancellare un cookie
+function deleteCookie(name: string) {
+  if (typeof document !== 'undefined') {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  }
+}
+
 export default function AuthRedirectPage() {
   const router = useRouter();
   const [status, setStatus] = useState("Autenticazione in corso...");
@@ -19,10 +35,13 @@ export default function AuthRedirectPage() {
           return;
         }
 
-        // Leggi l'intento salvato in localStorage
-        const authIntent = localStorage.getItem('auth_intent');
+        // Leggi l'intento da COOKIE (priorità) o localStorage (backup)
+        const authIntent = getCookie('auth_intent') || localStorage.getItem('auth_intent');
+        
+        console.log('[AuthRedirect] Intent found:', authIntent);
         
         // Rimuovi l'intento dopo averlo letto
+        deleteCookie('auth_intent');
         localStorage.removeItem('auth_intent');
 
         // Se l'intento era "register", vai sempre a /register
