@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   
   // Determina l'URL base sicuro (non localhost in produzione)
   const safeOrigin = origin.includes('localhost') 
-    ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://slurpy-tag.vercel.app')
+    ? (process.env.NEXT_PUBLIC_SITE_URL || 'https://app.slurpygelato.it')
     : origin
 
   // Se c'è un errore nella query string, reindirizza al login

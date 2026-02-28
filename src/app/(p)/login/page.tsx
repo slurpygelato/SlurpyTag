@@ -42,7 +42,7 @@ function AuthForm() {
     
     // Usa sempre la variabile d'ambiente se disponibile
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-      || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
+      || (typeof window !== 'undefined' ? window.location.origin : 'https://app.slurpygelato.it');
     
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
     // IMPORTANTE: redirect a /auth/callback per PKCE flow
@@ -82,7 +82,7 @@ function AuthForm() {
       
       // IMPORTANTE: redirect a /auth/callback per PKCE flow
       const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-        || (typeof window !== 'undefined' ? window.location.origin : 'https://slurpy-tag.vercel.app');
+        || (typeof window !== 'undefined' ? window.location.origin : 'https://app.slurpygelato.it');
       const cleanBaseUrl = baseUrl.replace(/\/$/, '');
       const redirectUrl = `${cleanBaseUrl}/auth/callback`;
       
