@@ -40,24 +40,12 @@ function AuthForm() {
       setGoogleLoading(true);
       setMessage("");
       
-      const intent = isRegistering ? 'register' : 'login';
-      
-      // Salva l'intento in cookie E localStorage come backup
-      if (typeof window !== 'undefined') {
-        document.cookie = `auth_intent=${intent}; path=/; max-age=300; SameSite=Lax`;
-        localStorage.setItem('auth_intent', intent);
-      }
-      
-      const redirectUrl = 'https://app.slurpygelato.it/auth/callback';
-      
       console.log('[Google OAuth] Starting...');
-      console.log('[Google OAuth] Redirect URL:', redirectUrl);
-      console.log('[Google OAuth] Intent:', intent);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: 'https://app.slurpygelato.it/auth/callback',
         },
       });
       
@@ -88,22 +76,11 @@ function AuthForm() {
         return;
       }
       
-      // IMPORTANTE: redirect a /auth/callback per PKCE flow
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-        || (typeof window !== 'undefined' ? window.location.origin : 'https://app.slurpygelato.it');
-      const cleanBaseUrl = baseUrl.replace(/\/$/, '');
-      const redirectUrl = `${cleanBaseUrl}/auth/callback`;
-      
-      // Salva l'intento per la conferma email
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('auth_intent', 'register');
-      }
-      
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: { 
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: 'https://app.slurpygelato.it/auth/callback',
         }
       });
       if (error) setMessage(error.message);
@@ -236,6 +213,9 @@ function AuthForm() {
           </p>
           <p className="font-patrick text-xl mt-4 text-[#8e8e8e] uppercase">
             Controlla la posta per attivare il profilo!
+          </p>
+          <p className="font-patrick text-base mt-4 text-[#FF8CB8] uppercase">
+            ⚠️ Controlla anche la cartella SPAM!
           </p>
         </div>
       )}

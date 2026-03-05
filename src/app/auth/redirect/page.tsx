@@ -3,22 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
-// Helper per leggere un cookie
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
-}
-
-// Helper per cancellare un cookie
-function deleteCookie(name: string) {
-  if (typeof document !== 'undefined') {
-    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-  }
-}
-
 export default function AuthRedirectPage() {
   const router = useRouter();
   const [status, setStatus] = useState("Autenticazione in corso...");
@@ -34,32 +18,12 @@ export default function AuthRedirectPage() {
         console.log('[AuthRedirect] Session:', session ? 'found' : 'not found');
         
         if (!session) {
-          setStatus("Sessione non trovata. Reindirizzamento...");
-          router.push("/login?message=Sessione non trovata");
+          setStatus("Sessione non trovata...");
+          router.push("/login?message=Sessione non trovata. Riprova.");
           return;
         }
 
-        // Leggi l'intento da cookie o localStorage
-        const cookieIntent = getCookie('auth_intent');
-        const localIntent = localStorage.getItem('auth_intent');
-        const authIntent = cookieIntent || localIntent;
-        
-        console.log('[AuthRedirect] Cookie intent:', cookieIntent);
-        console.log('[AuthRedirect] Local intent:', localIntent);
-        console.log('[AuthRedirect] Final intent:', authIntent);
-        
-        // Rimuovi l'intento dopo averlo letto
-        deleteCookie('auth_intent');
-        localStorage.removeItem('auth_intent');
-
-        // Se l'intento era "register", vai sempre a /register
-        if (authIntent === 'register') {
-          setStatus("Reindirizzamento alla registrazione...");
-          router.push("/register");
-          return;
-        }
-
-        // Se l'intento era "login" o non specificato, controlla se ha cani registrati
+        // Logica semplice: controlla se ha cani registrati
         const { data: petsData } = await supabase
           .from('pets')
           .select('id')
@@ -69,15 +33,17 @@ export default function AuthRedirectPage() {
         console.log('[AuthRedirect] Pets found:', petsData?.length || 0);
 
         if (petsData && petsData.length > 0) {
-          setStatus("Bentornato! Reindirizzamento alla dashboard...");
+          // Utente esistente con cani → Dashboard
+          setStatus("Bentornato! Caricamento dashboard...");
           router.push("/dashboard");
         } else {
-          setStatus("Reindirizzamento alla registrazione...");
+          // Nuovo utente o senza cani → Registrazione
+          setStatus("Completiamo il profilo...");
           router.push("/register");
         }
       } catch (error) {
         console.error("[AuthRedirect] Error:", error);
-        setStatus("Errore. Reindirizzamento...");
+        setStatus("Errore. Riprova...");
         router.push("/login?message=Errore durante l'autenticazione");
       }
     };
